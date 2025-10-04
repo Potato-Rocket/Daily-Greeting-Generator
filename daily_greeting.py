@@ -1,6 +1,7 @@
 import requests
 from urllib.parse import quote
 import json
+import base64
 import random
 import re
 import logging
@@ -13,13 +14,16 @@ USER_AGENT = "DailyGreetingYggdrasil/1.0"
 
 # Details for Ollama API call
 OLLAMA_BASE = "http://192.168.1.134:11434"
-MODEL = "mistral:7b"
-# MODEL = "llama3.2:3b"
+# MODEL = "mistral:7b"
+MODEL = "llama3.2:3b"
+# IMAGE_MODEL = "llava:7b"
+IMAGE_MODEL = "gemma3:4b"
 
 # Details for Navidrome server
 NAVIDROME_BASE = "http://192.168.1.134:4533"
 NAVIDROME_USER = "oscar"
 NAVIDROME_PASS = "0U&Hy7#2IwMIYN"
+NAVIDROME_CLIENT = "dailygreeting"
 
 
 def get_weather_data():
@@ -236,7 +240,7 @@ def get_navidrome_albums(count=5):
         logging.info(f"Fetching random albums from Navidrome server...")
 
         # construct the API URL with proper URL encoding for the password
-        api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c=dailygreeting&f=json&type=random&size={count}"
+        api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&type=random&size={count}"
         response = requests.get(api_url)
         # check for successful response
         if response.status_code != 200:
@@ -265,18 +269,70 @@ def get_navidrome_albums(count=5):
         return None
 
 
-def send_ollama_request(prompt):
+def get_album_details(album_id):
+    """
+    Retrieve detailed information about a specific album from Navidrome.
+    Returns dict with album details, or None on failure.
+    """
+    try:
+        logging.info(f"Fetching details for album ID {album_id} from Navidrome server...")
+
+        # construct the API URL with proper URL encoding for the password
+        api_url = f"{NAVIDROME_BASE}/rest/getAlbum.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&id={album_id}"
+        response = requests.get(api_url)
+        # check for successful response
+        if response.status_code != 200:
+            logging.error(f"Navidrome API error: {response.status_code}")
+            return None
+        
+        # parse the album details from the API response
+        album = response.json()['subsonic-response']['album']
+        songs = [song['title'] for song in album['song']]
+
+        # fetch cover art if available
+        coverart_id = album.get('coverArt')
+        if not coverart_id:
+            logging.warning(f"No cover art available for album {album_id}")
+            coverart = None
+        else:
+            # request the cover art image
+            api_url = f"{NAVIDROME_BASE}/rest/getCoverArt.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&id={coverart_id}"
+            response = requests.get(api_url)
+            # check for successful response
+            if response.status_code != 200:
+                logging.warning(f"Navidrome CoverArt API error: {response.status_code}")
+                coverart = None
+            else:
+                coverart = base64.b64encode(response.content).decode('utf-8')
+
+        return {
+            'songs': songs,
+            'coverart': coverart
+        }
+
+    except Exception as e:
+        # Catch any errors and log a message for debugging
+        logging.exception(f"Navidrome error: {e}")
+        return None
+
+
+def send_ollama_request(prompt, keep_alive=5):
     """
     Send a prompt to the Ollama API and return the response text.
     Returns the response string, or None on failure.
+
+    Args:
+        prompt: The text prompt to send
+        keep_alive: How long to keep model loaded. Default 0 (unload immediately).
     """
     # prepare payload for Ollama API
     payload = {
         "model": MODEL,
         "prompt": prompt,
-        "stream": False
+        "stream": False,
+        "keep_alive": keep_alive
     }
-    
+
     # send request to Ollama API
     logging.info(f"Sending request to Ollama model {MODEL}...")
     response = requests.post(OLLAMA_BASE + "/api/generate", json=payload)
@@ -284,7 +340,37 @@ def send_ollama_request(prompt):
     if response.status_code != 200:
         logging.error(f"Ollama API error: {response.status_code}")
         return None
-    
+
+    return response.json()['response']
+
+
+def send_ollama_image_request(prompt, image_base64, keep_alive=0):
+    """
+    Send a prompt with an image to the Ollama API and return the response text.
+    Returns the response string, or None on failure.
+
+    Args:
+        prompt: The text prompt to send
+        image_base64: Base64-encoded image string
+        keep_alive: How long to keep model loaded. Default 0 (unload immediately).
+    """
+    # prepare payload for Ollama API
+    payload = {
+        "model": IMAGE_MODEL,
+        "prompt": prompt,
+        "images": [image_base64],
+        "stream": False,
+        "keep_alive": keep_alive
+    }
+
+    # send request to Ollama API
+    logging.info(f"Sending image request to Ollama model {IMAGE_MODEL}...")
+    response = requests.post(OLLAMA_BASE + "/api/generate", json=payload)
+    # check for successful response
+    if response.status_code != 200:
+        logging.error(f"Ollama API error: {response.status_code}")
+        return None
+
     return response.json()['response']
 
 
@@ -325,4 +411,3 @@ def format_albums(album_data):
         album_lines.append(f"[{index + 1}] \"{album['name']}\" by {album['artist']} ({album['year']}) - Genres: {genres}")
     
     return "Albums:\n" + "\n".join(album_lines)
-
