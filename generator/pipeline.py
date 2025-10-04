@@ -75,7 +75,7 @@ def select_album(io_manager, formatted_lit):
     albums = get_navidrome_albums(count=5)
     formatted_albums = format_albums(albums)
 
-    album_prompt = f"""Please select one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
+    album_prompt = f"""Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
 
 {formatted_albums}
 
@@ -83,7 +83,7 @@ def select_album(io_manager, formatted_lit):
 
 Respond in this exact format strictly:
 REASONING: Two or three sentences considering different options before deciding on the best choice.
-VERDICT: 1 or 2 or 3 or 4 or 5 (the number of the selected album from the list above) and nothing else"""
+VERDICT: N (N is the number of the selected album from the list above) and nothing else"""
 
     io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
     evaluation = send_ollama_request(album_prompt)

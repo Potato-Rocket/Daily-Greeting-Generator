@@ -13,6 +13,7 @@ import base64
 import random
 import re
 import logging
+import time
 
 
 # Weather.gov API configuration
@@ -35,11 +36,13 @@ def get_weather_data():
         dict: Weather data with 'overnight', 'sunrise', 'today' keys, or None on failure
     """
     try:
+        start_time = time.time()
         logging.info("Fetching weather data from weather.gov API")
 
         # Convert latitude and longitude to NWS grid coordinates
         points_url = f"https://api.weather.gov/points/{LAT},{LON}"
         points_response = requests.get(points_url, headers={"User-Agent": USER_AGENT})
+        logging.debug(f"Points API call took {time.time() - start_time:.2f}s")
 
         if points_response.status_code != 200:
             logging.error(f"Weather.gov points API returned status {points_response.status_code}")
@@ -51,8 +54,10 @@ def get_weather_data():
         logging.debug(f"Forecast URLs: {forecast_url}, {forecast_hourly_url}")
 
         # Fetch forecast data
+        forecast_start = time.time()
         forecast_response = requests.get(forecast_url, headers={"User-Agent": USER_AGENT})
         hourly_response = requests.get(forecast_hourly_url, headers={"User-Agent": USER_AGENT})
+        logging.debug(f"Forecast API calls took {time.time() - forecast_start:.2f}s")
 
         if forecast_response.status_code != 200 or hourly_response.status_code != 200:
             logging.error(f"Weather.gov forecast API error (daily: {forecast_response.status_code}, hourly: {hourly_response.status_code})")
@@ -75,6 +80,8 @@ def get_weather_data():
         overnight = forecast_data["properties"]["periods"][0]
         today = forecast_data["properties"]["periods"][1]
 
+        total_time = time.time() - start_time
+        logging.debug(f"Total weather API time: {total_time:.2f}s")
         logging.info("Weather data fetched successfully")
 
         return {
@@ -118,12 +125,14 @@ def get_random_literature(length=600, padding=2000):
         dict: Literature data with 'title', 'author', 'excerpt' keys, or None on failure
     """
     try:
+        start_time = time.time()
         # Select random page using exponential distribution (favors lower page numbers)
         random_page = int(random.expovariate(0.05)) + 1
         logging.info(f"Fetching literature from Gutendex (page {random_page})")
 
         api_url = f"https://gutendex.com/books/?languages=en&page={random_page}"
         response = requests.get(api_url)
+        logging.debug(f"Gutendex API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
             logging.error(f"Gutendex API returned status {response.status_code}")
@@ -155,7 +164,9 @@ def get_random_literature(length=600, padding=2000):
         logging.info(f"Fetching text for '{title}'")
         logging.debug(f"Book ID {book_id}, URL: {text_url}")
 
+        text_start = time.time()
         text_response = requests.get(text_url, timeout=10)
+        logging.debug(f"Book text download took {time.time() - text_start:.2f}s")
         if text_response.status_code != 200:
             logging.error(f"Failed to fetch book text (status {text_response.status_code})")
             return None
@@ -201,6 +212,8 @@ def get_random_literature(length=600, padding=2000):
         if first_space > 0 and last_space > first_space:
             excerpt = excerpt[first_space + 1:last_space]
 
+        total_time = time.time() - start_time
+        logging.debug(f"Total literature fetch time: {total_time:.2f}s")
         logging.info(f"Literature excerpt extracted successfully ({len(excerpt)} chars)")
 
         return {
@@ -225,10 +238,12 @@ def get_navidrome_albums(count=5):
         list: Album dicts with 'id', 'name', 'artist', 'year', 'genres' keys, or None on failure
     """
     try:
+        start_time = time.time()
         logging.info(f"Fetching {count} random albums from Navidrome")
 
         api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&type=random&size={count}"
         response = requests.get(api_url)
+        logging.debug(f"Navidrome album list API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
             logging.error(f"Navidrome API returned status {response.status_code}")
@@ -267,10 +282,12 @@ def get_album_details(album_id):
         dict: Album details with 'songs', 'coverart' keys, or None on failure
     """
     try:
+        start_time = time.time()
         logging.info(f"Fetching album details (ID: {album_id})")
 
         api_url = f"{NAVIDROME_BASE}/rest/getAlbum.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&id={album_id}"
         response = requests.get(api_url)
+        logging.debug(f"Navidrome album details API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
             logging.error(f"Navidrome API returned status {response.status_code}")
@@ -288,7 +305,9 @@ def get_album_details(album_id):
         else:
             logging.debug(f"Fetching cover art (ID: {coverart_id})")
             api_url = f"{NAVIDROME_BASE}/rest/getCoverArt.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&id={coverart_id}"
+            art_start = time.time()
             response = requests.get(api_url)
+            logging.debug(f"Cover art download took {time.time() - art_start:.2f}s")
 
             if response.status_code != 200:
                 logging.warning(f"Cover art API returned status {response.status_code}")
@@ -297,6 +316,8 @@ def get_album_details(album_id):
                 coverart = base64.b64encode(response.content).decode('utf-8')
                 logging.info("Cover art fetched successfully")
 
+        total_time = time.time() - start_time
+        logging.debug(f"Total album details fetch time: {total_time:.2f}s")
         logging.info("Album details fetched successfully")
 
         return {

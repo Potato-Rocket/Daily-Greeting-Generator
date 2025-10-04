@@ -6,6 +6,7 @@ Handles communication with Ollama API for text generation and vision tasks.
 
 import requests
 import logging
+import time
 
 
 # Ollama API configuration
@@ -26,6 +27,7 @@ def send_ollama_request(prompt):
     Returns:
         str: LLM response text, or None on failure
     """
+    start_time = time.time()
     logging.info(f"Sending request to Ollama ({MODEL})")
 
     payload = {
@@ -36,6 +38,8 @@ def send_ollama_request(prompt):
 
     try:
         response = requests.post(OLLAMA_BASE + "/api/generate", json=payload)
+        api_time = time.time() - start_time
+        logging.debug(f"Ollama API call took {api_time:.2f}s")
 
         if response.status_code != 200:
             logging.error(f"Ollama API returned status {response.status_code}")
@@ -63,6 +67,7 @@ def send_ollama_image_request(prompt, image_base64):
     Returns:
         str: Vision model response text, or None on failure
     """
+    start_time = time.time()
     logging.info(f"Sending vision request to Ollama ({IMAGE_MODEL})")
 
     payload = {
@@ -74,6 +79,8 @@ def send_ollama_image_request(prompt, image_base64):
 
     try:
         response = requests.post(OLLAMA_BASE + "/api/generate", json=payload)
+        api_time = time.time() - start_time
+        logging.debug(f"Ollama vision API call took {api_time:.2f}s")
 
         if response.status_code != 200:
             logging.error(f"Ollama vision API returned status {response.status_code}")
