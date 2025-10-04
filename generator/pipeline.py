@@ -1,0 +1,220 @@
+"""
+Pipeline Logic for Daily Greeting Generator
+
+Multi-stage LLM pipeline:
+1. Literature validation (with retry logic)
+2. Album selection (from 5 random albums)
+3. Album art analysis (default check + vision description)
+4. Synthesis layer (extract themes, mood, sensory anchors)
+5. Composition layer (transform to wake-up message) - TODO
+"""
+
+import re
+import base64
+import random
+import logging
+
+from .data_sources import get_random_literature, get_navidrome_albums, get_album_details
+from .formatters import format_literature, format_albums, format_album, format_weather
+from .llm import send_ollama_request, send_ollama_image_request
+
+
+def validate_literature(io_manager, max_attempts=5):
+    """
+    Fetch and validate literature excerpt.
+    Returns validated literature data and formatted string, or (None, None) if max attempts reached.
+
+    Args:
+        io_manager: IOManager instance for output
+        max_attempts: Maximum number of attempts to find suitable literature
+    """
+    logging.info("Starting literature validation")
+
+    for attempt in range(1, max_attempts + 1):
+        logging.debug(f"Literature validation attempt {attempt}/{max_attempts}")
+        literature = get_random_literature()
+
+        if not literature:
+            logging.warning(f"Literature fetch failed on attempt {attempt}, retrying")
+            continue
+
+        formatted_lit = format_literature(literature)
+        literature_prompt = f"""Please evaluate whether the following literary excerpt is suitable material from which to source themes, mood, imagery, metaphor, or sensory details.
+
+{formatted_lit}
+
+Respond in this exact format strictly:
+REASONING: One sentence reasoning about the suitability of the text.
+VERDICT: YES if suitable NO if not"""
+
+        io_manager.print_section("LITERATURE VALIDATION - PROMPT", literature_prompt)
+        evaluation = send_ollama_request(literature_prompt)
+        io_manager.print_section("LITERATURE VALIDATION - RESPONSE", evaluation)
+
+        if "VERDICT: YES" in evaluation.upper():
+            logging.info(f"Suitable literature found (attempts: {attempt})")
+            return literature, formatted_lit
+        else:
+            logging.debug(f"Literature rejected by LLM on attempt {attempt}")
+
+    logging.error(f"Literature validation failed after {max_attempts} attempts")
+    return None, None
+
+
+def select_album(io_manager, formatted_lit):
+    """
+    Fetch 5 random albums and select the best pairing with literature.
+    Returns selected album data.
+
+    Args:
+        io_manager: IOManager instance for output
+        formatted_lit: Formatted literature string for pairing
+    """
+    logging.info("Starting album selection")
+
+    albums = get_navidrome_albums(count=5)
+    formatted_albums = format_albums(albums)
+
+    album_prompt = f"""Please select one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
+
+{formatted_albums}
+
+{formatted_lit}
+
+Respond in this exact format strictly:
+REASONING: Two or three sentences considering different options before deciding on the best choice.
+VERDICT: 1 or 2 or 3 or 4 or 5 (the number of the selected album from the list above) and nothing else"""
+
+    io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
+    evaluation = send_ollama_request(album_prompt)
+    io_manager.print_section("ALBUM SELECTION - RESPONSE", evaluation)
+
+    # Parse LLM verdict using regex
+    match = re.search(r'VERDICT:\s*(\d+)', evaluation)
+    if match:
+        selection = int(match.group(1)) - 1
+        if selection < 0 or selection >= len(albums):
+            logging.warning(f"Album selection #{selection + 1} out of range, using random fallback")
+            selection = random.randint(0, 4)
+        else:
+            logging.info(f"Selected album #{selection + 1}: '{albums[selection]['name']}' by {albums[selection]['artist']}")
+    else:
+        logging.warning("Failed to parse album selection, using random fallback")
+        selection = random.randint(0, 4)
+        logging.debug(f"Random fallback selected album #{selection + 1}")
+
+    return albums[selection]
+
+
+def analyze_album_art(io_manager, album):
+    """
+    Fetch album details and analyze cover art if available.
+    Updates album dict with songs list and coverart description (or None).
+
+    Args:
+        io_manager: IOManager instance for output and file saving
+        album: Album dict (modified in place with 'songs' and 'coverart' fields)
+    """
+    logging.info("Starting album art analysis")
+
+    album_details = get_album_details(album['id'])
+    album['songs'] = album_details.get('songs')
+
+    if not album_details['coverart']:
+        logging.warning("No cover art available, skipping analysis")
+        album['coverart'] = None
+        return
+
+    # Save cover art to file
+    coverart_bytes = base64.b64decode(album_details['coverart'])
+    io_manager.save_coverart(coverart_bytes)
+
+    # Check if cover art is Navidrome default placeholder
+    default_prompt = """Determine whether this image matches the default album cover image for Navidrome, a blue vinyl record on a blank background with the word "Navidrome" on it.
+
+Respond with the following exact format strictly:
+DESCRIPTION: One sentence description of the image.
+REASONING: One sentence reasoning about whether the cover art matches not.
+VERDICT: YES if it matches NO if it does not"""
+
+    io_manager.print_section("ALBUM ART - DEFAULT CHECK PROMPT", default_prompt)
+    response = send_ollama_image_request(default_prompt, album_details['coverart'])
+
+    if response is None:
+        logging.error("Cover art default check failed, skipping analysis")
+        album['coverart'] = None
+        return
+
+    io_manager.print_section("ALBUM ART - DEFAULT CHECK RESPONSE", response)
+
+    if "VERDICT: YES" in response.upper():
+        logging.info("Cover art is Navidrome default placeholder, discarding")
+        album['coverart'] = None
+        return
+
+    # Cover art is custom, proceed with detailed analysis
+    logging.info("Cover art is custom, proceeding with analysis")
+
+    art_prompt = """Provide a detailed description of the provided album cover art, including colors, composition, and style. Use three to five bullet points.
+
+Respond with only the description, no other text. Use markdown bullet points."""
+
+    io_manager.print_section("ALBUM ART - ANALYSIS PROMPT", art_prompt)
+    analysis = send_ollama_image_request(art_prompt, album_details['coverart'])
+
+    if analysis is None:
+        logging.error("Cover art analysis failed")
+        album['coverart'] = None
+    else:
+        io_manager.print_section("ALBUM ART - ANALYSIS RESPONSE", analysis)
+        album['coverart'] = analysis
+        logging.info("Album art analysis complete")
+
+
+def synthesize_materials(io_manager, weather, formatted_lit, album):
+    """
+    Run synthesis layer to extract thematic/atmospheric elements.
+    Returns synthesis output string.
+
+    Args:
+        io_manager: IOManager instance for output
+        weather: Weather data dict
+        formatted_lit: Formatted literature string
+        album: Album dict with details
+    """
+    logging.info("Starting synthesis layer")
+
+    synthesis_prompt = f"""Analyze the following inputs and extract key thematic, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances across all sources. Do not create a narrative or draw conclusions - only identify raw materials.
+
+{format_weather(weather)}
+
+{formatted_lit}
+
+{format_album(album)}
+
+Respond in this exact format strictly:
+THEMES: Three to five abstract themes or concepts present across the sources (e.g., vastness, transition, isolation, harmony)
+MOOD: Two to four mood descriptors capturing the overall emotional texture
+SENSORY ANCHORS: Three to five concrete sensory details (colors, textures, temperatures, sounds) that could serve as metaphorical touchpoints
+SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation"""
+
+    io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
+    synthesis = send_ollama_request(synthesis_prompt)
+    io_manager.print_section("SYNTHESIS - RESPONSE", synthesis)
+
+    logging.info("Synthesis layer complete")
+
+    return synthesis
+
+
+def compose_greeting(io_manager, synthesis_output):
+    """
+    Run composition layer to transform synthesis into wake-up message.
+    TODO: Design and implement this prompt.
+
+    Args:
+        io_manager: IOManager instance for output
+        synthesis_output: Synthesis layer output string
+    """
+    logging.warning("Composition layer not yet implemented.")
+    return None
