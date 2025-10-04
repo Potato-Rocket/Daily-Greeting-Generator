@@ -103,6 +103,34 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         with open(data_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
+    def load_data_file(self, date_str=None):
+        """
+        Load previously saved data_{date}.json file.
+
+        Args:
+            date_str: Date string (YYYY-MM-DD) to load. If None, uses current date.
+
+        Returns:
+            dict: Loaded pipeline data with 'weather', 'literature', 'album' keys, or None on failure
+        """
+        if date_str is None:
+            date_str = self.date_str
+
+        data_path = self.base_dir / date_str / f"data_{date_str}.json"
+
+        if not data_path.exists():
+            logging.error(f"Data file not found: {data_path}")
+            return None
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            logging.info(f"Loaded data from {data_path}")
+            return data
+        except Exception as e:
+            logging.exception(f"Failed to load data file: {e}")
+            return None
+
     def save_greeting(self, greeting_text):
         """
         Save the final greeting to greeting_{date}.txt file.

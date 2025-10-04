@@ -21,12 +21,14 @@ from .llm import send_ollama_request, send_ollama_image_request
 
 def validate_literature(io_manager, max_attempts=5):
     """
-    Fetch and validate literature excerpt.
-    Returns validated literature data and formatted string, or (None, None) if max attempts reached.
+    Fetch and validate literature excerpt using LLM evaluation.
 
     Args:
         io_manager: IOManager instance for output
         max_attempts: Maximum number of attempts to find suitable literature
+
+    Returns:
+        dict: Validated literature data with 'title', 'author', 'excerpt' keys, or None if max attempts reached
     """
     logging.info("Starting literature validation")
 
@@ -53,33 +55,36 @@ VERDICT: YES if suitable NO if not"""
 
         if "VERDICT: YES" in evaluation.upper():
             logging.info(f"Suitable literature found (attempts: {attempt})")
-            return literature, formatted_lit
+            return literature
         else:
             logging.debug(f"Literature rejected by LLM on attempt {attempt}")
 
     logging.error(f"Literature validation failed after {max_attempts} attempts")
-    return None, None
+    return None
 
 
-def select_album(io_manager, formatted_lit):
+def select_album(io_manager, literature):
     """
-    Fetch 5 random albums and select the best pairing with literature.
-    Returns selected album data.
+    Fetch 5 random albums and select the best pairing with literature using LLM.
 
     Args:
         io_manager: IOManager instance for output
-        formatted_lit: Formatted literature string for pairing
+        literature: Literature excerpt dict with info
+
+    Returns:
+        dict: Selected album with 'id', 'name', 'artist', 'year', 'genres' keys
     """
     logging.info("Starting album selection")
 
     albums = get_navidrome_albums(count=5)
     formatted_albums = format_albums(albums)
+    formatted_literature = format_literature(literature)
 
     album_prompt = f"""Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
 
 {formatted_albums}
 
-{formatted_lit}
+{formatted_literature}
 
 Respond in this exact format strictly:
 REASONING: Two or three sentences considering different options before deciding on the best choice.
@@ -108,8 +113,8 @@ VERDICT: N (N is the number of the selected album from the list above) and nothi
 
 def analyze_album_art(io_manager, album):
     """
-    Fetch album details and analyze cover art if available.
-    Updates album dict with songs list and coverart description (or None).
+    Fetch album details and analyze cover art if available using vision model.
+    Modifies album dict in place with 'songs' list and 'coverart' description.
 
     Args:
         io_manager: IOManager instance for output and file saving
@@ -171,16 +176,18 @@ Respond with only the description, no other text. Use markdown bullet points."""
         logging.info("Album art analysis complete")
 
 
-def synthesize_materials(io_manager, weather, formatted_lit, album):
+def synthesize_materials(io_manager, weather, literature, album):
     """
-    Run synthesis layer to extract thematic/atmospheric elements.
-    Returns synthesis output string.
+    Run synthesis layer to extract thematic/atmospheric elements from all sources.
 
     Args:
         io_manager: IOManager instance for output
         weather: Weather data dict
-        formatted_lit: Formatted literature string
+        literature: Literature excerpt dict with info
         album: Album dict with details
+
+    Returns:
+        str: Synthesis output with THEMES, MOOD, SENSORY ANCHORS, and SYMBOLIC ELEMENTS sections
     """
     logging.info("Starting synthesis layer")
 
@@ -188,7 +195,7 @@ def synthesize_materials(io_manager, weather, formatted_lit, album):
 
 {format_weather(weather)}
 
-{formatted_lit}
+{format_literature(literature)}
 
 {format_album(album)}
 
@@ -210,11 +217,13 @@ SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for 
 def compose_greeting(io_manager, synthesis_output):
     """
     Run composition layer to transform synthesis into wake-up message.
-    TODO: Design and implement this prompt.
 
     Args:
         io_manager: IOManager instance for output
         synthesis_output: Synthesis layer output string
+
+    Returns:
+        str: Final greeting message, or None if not yet implemented
     """
     logging.warning("Composition layer not yet implemented.")
     return None

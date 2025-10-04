@@ -23,7 +23,7 @@ def format_weather(weather_data):
 
     today = f"Today ({weather_data['today']['dayOfWeek']}): {weather_data['today']['description']} {weather_data['today']['precipitation']}% chance of precipitation."
 
-    return "Weather data:\n" + overnight + "\n" + sunrise + "\n" + today
+    return "WEATHER DATA:\n" + overnight + "\n" + sunrise + "\n" + today
 
 
 def format_literature(literature_data):
@@ -40,7 +40,7 @@ def format_literature(literature_data):
     if literature_data['author']['birth_year'] and literature_data['author']['death_year']:
         author_info += f" ({literature_data['author']['birth_year']}-{literature_data['author']['death_year']})"
 
-    return f'Literature excerpt: "{literature_data["title"]}" by {author_info}:\n\n{literature_data["excerpt"]}'
+    return f'LITERATURE EXCERPT: "{literature_data["title"]}" by {author_info}:\n\n{literature_data["excerpt"]}'
 
 
 def format_albums(album_data):
@@ -58,7 +58,7 @@ def format_albums(album_data):
         genres = ', '.join(album['genres']) if album['genres'] else 'Unknown genre'
         album_lines.append(f"[{index + 1}] \"{album['name']}\" by {album['artist']} ({album['year']}) - Genres: {genres}")
 
-    return "Albums:\n" + "\n".join(album_lines)
+    return "ALBUMS:\n" + "\n".join(album_lines)
 
 
 def format_album(album_data):
@@ -81,7 +81,7 @@ def format_album(album_data):
     for index, song in enumerate(album_data['songs']):
         song_lines.append(f"{index + 1}. {song}")
 
-    string = f"""Selected album: \"{album_data['name']}\" by {album_data['artist']} ({album_data['year']})
+    string = f"""SELECTED ALBUM: \"{album_data['name']}\" by {album_data['artist']} ({album_data['year']})
 Genres: {genres}
 Tracklist:
 {"\n".join(song_lines)}"""

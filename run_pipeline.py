@@ -49,7 +49,7 @@ def main():
 
             # Stage 2: Literature validation
             logging.info("Stage 2: Literature validation")
-            literature, formatted_lit = validate_literature(io_manager, max_attempts=5)
+            literature = validate_literature(io_manager, max_attempts=5)
             if not literature:
                 logging.error("Pipeline aborted: No suitable literature found")
                 return
@@ -57,7 +57,7 @@ def main():
 
             # Stage 3: Album selection
             logging.info("Stage 3: Album selection")
-            album = select_album(io_manager, formatted_lit)
+            album = select_album(io_manager, literature)
 
             # Stage 4: Album art analysis
             logging.info("Stage 4: Album art analysis")
@@ -66,7 +66,8 @@ def main():
 
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
-            synthesis = synthesize_materials(io_manager, weather, formatted_lit, album)
+            synthesis = synthesize_materials(io_manager, weather, literature, album)
+            io_manager.update_data_file(synthesis=synthesis)
 
             # Stage 6: Composition layer (TODO)
             logging.info("Stage 6: Composition")

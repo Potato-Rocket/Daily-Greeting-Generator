@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""
+Test Pipeline Runner
+
+Loads previously fetched data (weather, literature, album) from a stored data file
+and runs only the synthesis and composition stages. Useful for testing prompt changes
+without hitting external APIs.
+
+Usage:
+    python test_pipeline.py [YYYY-MM-DD]
+
+If date is omitted, uses today's date.
+"""
+
+import sys
+import logging
+
+from generator.io_manager import IOManager, setup_logging
+from generator.formatters import format_literature
+from generator.pipeline import synthesize_materials, compose_greeting
+
+
+def main():
+    """Run the test pipeline using stored data."""
+
+    # Parse date argument if provided
+    date_str = sys.argv[1] if len(sys.argv) > 1 else None
+
+    # Initialize I/O manager and logging
+    io_manager = IOManager()
+    setup_logging(io_manager)
+
+    logging.info("=== TEST PIPELINE START ===")
+    if date_str:
+        logging.info(f"Loading data from {date_str}")
+
+    # Use context manager to ensure pipeline file is closed
+    with io_manager:
+        try:
+            # Load stored data
+            data = io_manager.load_data_file(date_str)
+            if not data:
+                logging.error("Test pipeline aborted: Could not load data file")
+                return
+
+            # Extract stored data
+            weather = data.get('weather')
+            literature = data.get('literature')
+            album = data.get('album')
+
+            if not weather or not literature or not album:
+                logging.error("Test pipeline aborted: Incomplete data (missing weather, literature, or album)")
+                return
+
+            # Format literature for synthesis stage
+            formatted_lit = format_literature(literature)
+
+            # Stage 5: Synthesis layer
+            logging.info("Stage 5: Synthesis")
+            synthesis = synthesize_materials(io_manager, weather, formatted_lit, album)
+
+            # Stage 6: Composition layer
+            logging.info("Stage 6: Composition")
+            greeting = compose_greeting(io_manager, synthesis)
+
+            if greeting:
+                io_manager.save_greeting(greeting)
+                io_manager.update_data_file(greeting=greeting)
+                logging.info("Greeting generated and saved")
+
+            logging.info("=== TEST PIPELINE COMPLETE ===")
+
+        except Exception as e:
+            logging.exception(f"Test pipeline error: {e}")
+            raise
+
+
+if __name__ == "__main__":
+    main()
