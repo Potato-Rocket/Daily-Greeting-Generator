@@ -16,7 +16,6 @@ import sys
 import logging
 
 from generator.io_manager import IOManager, setup_logging
-from generator.formatters import format_literature
 from generator.pipeline import synthesize_materials, compose_greeting
 
 
@@ -28,7 +27,7 @@ def main():
 
     # Initialize I/O manager and logging
     io_manager = IOManager()
-    setup_logging(io_manager)
+    setup_logging(io_manager, logging.DEBUG)
 
     logging.info("=== TEST PIPELINE START ===")
     if date_str:
@@ -52,12 +51,9 @@ def main():
                 logging.error("Test pipeline aborted: Incomplete data (missing weather, literature, or album)")
                 return
 
-            # Format literature for synthesis stage
-            formatted_lit = format_literature(literature)
-
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
-            synthesis = synthesize_materials(io_manager, weather, formatted_lit, album)
+            synthesis = synthesize_materials(io_manager, weather, literature, album)
 
             # Stage 6: Composition layer
             logging.info("Stage 6: Composition")

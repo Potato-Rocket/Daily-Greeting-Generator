@@ -176,7 +176,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         return False  # Don't suppress exceptions
 
 
-def setup_logging(io_manager):
+def setup_logging(io_manager, logging_level=logging.INFO):
     """
     Configure logging with timestamped file output and console output.
 
@@ -186,7 +186,7 @@ def setup_logging(io_manager):
     log_path = io_manager.run_dir / f"log_{io_manager.date_str}.txt"
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging_level,
         format='[%(asctime)s] %(levelname)s: %(message)s',
         datefmt='%H:%M:%S',
         handlers=[

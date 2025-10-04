@@ -11,6 +11,7 @@ Stages:
 4. Album art analysis
 5. Synthesis layer
 6. Composition layer (TODO)
+7. TTS synthesis
 
 Outputs saved to: ./tmp/{YYYY-MM-DD}/
 """
@@ -27,6 +28,7 @@ from generator.pipeline import (
     synthesize_materials,
     compose_greeting,
 )
+from generator.tts import synthesize_greeting
 
 
 def main():
@@ -77,6 +79,17 @@ def main():
                 io_manager.save_greeting(greeting)
                 io_manager.update_data_file(greeting=greeting)
                 logging.info("Greeting generated and saved")
+
+                # Stage 7: TTS synthesis
+                logging.info("Stage 7: TTS synthesis")
+                audio_path = io_manager.run_dir / f"greeting_{io_manager.date_str}.wav"
+                result = synthesize_greeting(greeting, audio_path)
+
+                if result:
+                    io_manager.update_data_file(audio_path=str(audio_path))
+                    logging.info("Audio saved successfully")
+                else:
+                    logging.error("TTS synthesis failed")
 
             logging.info("=== PIPELINE COMPLETE ===")
 

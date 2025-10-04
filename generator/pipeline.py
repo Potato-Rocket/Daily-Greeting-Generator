@@ -10,6 +10,7 @@ Multi-stage LLM pipeline:
 """
 
 import re
+import math
 import base64
 import random
 import logging
@@ -17,6 +18,10 @@ import logging
 from .data_sources import get_random_literature, get_navidrome_albums, get_album_details
 from .formatters import format_literature, format_albums, format_album, format_weather
 from .llm import send_ollama_request, send_ollama_image_request
+
+MESSAGE_MEAN_LEN = 140
+MESSAGE_Q1_LEN = 100
+MESSAGE_MIN_LEN = 80
 
 
 def validate_literature(io_manager, max_attempts=5):
@@ -191,7 +196,7 @@ def synthesize_materials(io_manager, weather, literature, album):
     """
     logging.info("Starting synthesis layer")
 
-    synthesis_prompt = f"""Analyze the following inputs and extract key thematic, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances across all sources. Do not create a narrative or draw conclusions - only identify raw materials.
+    synthesis_prompt = f"""Analyze the following inputs and extract key thematic, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances that tie the sources together.
 
 {format_weather(weather)}
 
@@ -199,11 +204,15 @@ def synthesize_materials(io_manager, weather, literature, album):
 
 {format_album(album)}
 
-Respond in this exact format strictly:
-THEMES: Three to five abstract themes or concepts present across the sources (e.g., vastness, transition, isolation, harmony)
+Do not create a narrative or draw conclusions, only identify raw materials.
+Do not include direct references to source material.
+
+Respond in this exact format strictly. Use markdown bullets:
+THEMES: Three to five abstract themes or concepts present across the sources
 MOOD: Two to four mood descriptors capturing the overall emotional texture
-SENSORY ANCHORS: Three to five concrete sensory details (colors, textures, temperatures, sounds) that could serve as metaphorical touchpoints
-SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation"""
+SENSORY ANCHORS: Three to five concrete sensory details that could serve as metaphorical touchpoints
+SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation
+STYLE ELEMENTS: Literary period/era (if identifiable), formats, or poetic forms present in the text (one or two items)"""
 
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     synthesis = send_ollama_request(synthesis_prompt)
@@ -225,5 +234,31 @@ def compose_greeting(io_manager, synthesis_output):
     Returns:
         str: Final greeting message, or None if not yet implemented
     """
-    logging.warning("Composition layer not yet implemented.")
-    return None
+    mu = math.log(MESSAGE_MEAN_LEN)
+    sigma = math.log(MESSAGE_MEAN_LEN/MESSAGE_Q1_LEN)
+    logging.debug(f"Lognormal with mu={mu:.2f}, sigma={sigma:.2f}")
+    length = int(random.lognormvariate(mu, sigma))
+    if length < MESSAGE_MIN_LEN:
+        logging.debug(f"Clamping length of {length} to {MESSAGE_MIN_LEN}")
+        length = MESSAGE_MIN_LEN
+    logging.debug(f"Length target is {length} words")
+    length_bounds = [length - random.randint(1, 10), length + random.randint(1, 10)]
+    logging.debug(f"Length bounds are {length_bounds[0]} to {length_bounds[1]} words")
+
+    logging.info("Starting composition layer")
+    
+    greeting_prompt = f"""Compose an urgent, motivating morning wake-up call. Please base your writing strongly on the following elements:
+
+{synthesis_output}
+
+Be sure to maintain an impersonal voice throughout.
+
+Please keep the response between {length_bounds[0]} and {length_bounds[1]} words in length. Respond with only the wake-up call and no other text."""
+    
+    io_manager.print_section("COMPOSITION - PROMPT", greeting_prompt)
+    greeting = send_ollama_request(greeting_prompt)
+    io_manager.print_section("COMPOSITION - RESPONSE", greeting)
+
+    logging.info("Composition layer complete")
+
+    return greeting
