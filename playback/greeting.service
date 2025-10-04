@@ -1,0 +1,18 @@
+[Unit]
+Description=Daily Greeting Flask Receiver
+After=network.target
+
+[Service]
+Type=simple
+User=oscar
+WorkingDirectory=/home/oscar/daily-greeting/playback
+ExecStart=/usr/bin/python3 /home/oscar/daily-greeting/playback/receive_greeting.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/home/oscar/daily-greeting/data/log.txt
+StandardError=append:/home/oscar/daily-greeting/data/log.txt
+
+[Install]
+WantedBy=multi-user.target

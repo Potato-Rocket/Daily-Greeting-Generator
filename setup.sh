@@ -15,7 +15,7 @@ if [ ! -f config.ini ]; then
     echo "Creating config.ini from template..."
     cp config.ini.example config.ini
     echo ""
-    echo "⚠️  IMPORTANT: Edit config.ini with your settings:"
+    echo "IMPORTANT: Edit config.ini with your settings:"
     echo "   - Weather coordinates"
     echo "   - Ollama server URL and models"
     echo "   - Navidrome credentials"

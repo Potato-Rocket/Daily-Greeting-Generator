@@ -205,14 +205,13 @@ def synthesize_materials(io_manager, weather, literature, album):
 {format_album(album)}
 
 Do not create a narrative or draw conclusions, only identify raw materials.
-Do not include direct references to source material.
 
 Respond in this exact format strictly. Use markdown bullets:
 THEMES: Three to five abstract themes or concepts present across the sources
 MOOD: Two to four mood descriptors capturing the overall emotional texture
 SENSORY ANCHORS: Three to five concrete sensory details that could serve as metaphorical touchpoints
 SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation
-STYLE ELEMENTS: Literary period/era (if identifiable), formats, or poetic forms present in the text (one or two items)"""
+DISTINCTIVE LANGUAGE: One to three notable phrases, word patterns, structuring quirks, or stylistic features (i.e. literary period/era) from the literature. Omit if generic/unremarkable."""
 
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     synthesis = send_ollama_request(synthesis_prompt)
@@ -251,6 +250,8 @@ def compose_greeting(io_manager, synthesis_output):
 
 {synthesis_output}
 
+You have studied these synthesis materials. Now FORGET the details. What emotions, images, or messages linger? Write from this residue only, keep it abstract.
+Keep it coherent, with a cohesive thread.
 Be sure to maintain an impersonal voice throughout.
 
 Please keep the response between {length_bounds[0]} and {length_bounds[1]} words in length. Respond with only the wake-up call and no other text."""

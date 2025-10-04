@@ -1,0 +1,11 @@
+# Playback Server Configuration
+# Copy this file to playback_config.ini and customize for your setup
+
+[playback]
+# Location coordinates for sunrise calculation
+lat = 42.2688
+lon = -71.8088
+
+# Offset in minutes after sunrise to allow playback
+# Window is: sunrise to (sunrise + offset_minutes)
+offset_minutes = 15

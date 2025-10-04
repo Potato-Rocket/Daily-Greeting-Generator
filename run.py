@@ -33,11 +33,14 @@ from generator.tts import synthesize_greeting
 def main():
     """Run the full pipeline iteration."""
 
+    # Setup basic logging first (will be reconfigured after IOManager init)
+    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+
     # Load configuration overrides
     config = load_config()
     apply_config(config)
 
-    # Initialize I/O manager and logging
+    # Initialize I/O manager and full logging
     io_manager = IOManager()
     setup_logging(io_manager)
 
@@ -74,7 +77,7 @@ def main():
             synthesis = synthesize_materials(io_manager, weather, literature, album)
             io_manager.update_data_file(synthesis=synthesis)
 
-            # Stage 6: Composition layer (TODO)
+            # Stage 6: Composition layer
             logging.info("Stage 6: Composition")
             greeting = compose_greeting(io_manager, synthesis)
 
