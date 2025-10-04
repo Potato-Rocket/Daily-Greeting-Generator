@@ -1,4 +1,5 @@
 import requests
+from urllib.parse import quote
 import json
 import random
 import re
@@ -12,8 +13,13 @@ USER_AGENT = "DailyGreetingYggdrasil/1.0"
 
 # Details for Ollama API call
 OLLAMA_BASE = "http://192.168.1.134:11434"
-# MODEL = "mistral:7b"
-MODEL = "llama3.2:3b"
+MODEL = "mistral:7b"
+# MODEL = "llama3.2:3b"
+
+# Details for Navidrome server
+NAVIDROME_BASE = "http://192.168.1.134:4533"
+NAVIDROME_USER = "oscar"
+NAVIDROME_PASS = "0U&Hy7#2IwMIYN"
 
 
 def get_weather_data():
@@ -220,6 +226,45 @@ def get_random_literature(length=1000, padding=2000):
         return None
 
 
+def get_navidrome_albums(count=5):
+    """
+    Retrieve a list of random albums from a Navidrome server.
+    Returns list of dicts with album and artist info, or None on failure.
+    """
+    try:
+        # Navidrome server details
+        logging.info(f"Fetching random albums from Navidrome server...")
+
+        # construct the API URL with proper URL encoding for the password
+        api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c=dailygreeting&f=json&type=random&size={count}"
+        response = requests.get(api_url)
+        # check for successful response
+        if response.status_code != 200:
+            logging.error(f"Navidrome API error: {response.status_code}")
+            return None
+        
+        # parse the album list from the API response
+        data = response.json()['subsonic-response']['albumList2']['album']
+
+        # cherry-pick relevant fields from each album
+        albums = []
+        for album in data:
+            albums.append({
+                'id': album['id'],
+                'name': album['name'],
+                'artist': album['artist'],
+                'year': album.get('year', 'Unknown'),
+                'genres': [genre['name'] for genre in album.get('genres', [])]
+            })
+
+        return albums
+    
+    except Exception as e:
+        # Catch any errors and log a message for debugging
+        logging.exception(f"Navidrome error: {e}")
+        return None
+
+
 def send_ollama_request(prompt):
     """
     Send a prompt to the Ollama API and return the response text.
@@ -254,11 +299,7 @@ def format_weather(weather_data):
 
     today = f"Today ({weather_data['today']['dayOfWeek']}): {weather_data['today']['description']} {weather_data['today']['precipitation']}% chance of precipitation."
 
-    return {
-        'overnight': overnight,
-        'sunrise': sunrise,
-        'today': today
-    }
+    return overnight + "\n" + sunrise + "\n" + today
 
 
 def format_literature(literature_data):
@@ -270,5 +311,18 @@ def format_literature(literature_data):
     if literature_data['author']['birth_year'] and literature_data['author']['death_year']:
         author_info += f" ({literature_data['author']['birth_year']}-{literature_data['author']['death_year']})"
 
-    return f'Literature excerpt: "{literature_data["title"]}" by {author_info}:\n{literature_data["excerpt"]}'
+    return f'Literature excerpt:\n"{literature_data["title"]}" by {author_info}:\n{literature_data["excerpt"]}'
+
+
+def format_albums(album_data):
+    """
+    Format album data into a human-readable string.
+    Returns formatted string listing albums and artists.
+    """
+    album_lines = []
+    for index, album in enumerate(album_data):
+        genres = ', '.join(album['genres']) if album['genres'] else 'Unknown genre'
+        album_lines.append(f"[{index + 1}] \"{album['name']}\" by {album['artist']} ({album['year']}) - Genres: {genres}")
+    
+    return "Albums:\n" + "\n".join(album_lines)
 

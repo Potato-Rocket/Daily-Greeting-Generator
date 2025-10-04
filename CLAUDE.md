@@ -38,8 +38,10 @@ The script uses hardcoded configuration at the top of `daily_greeting.py`:
 - **Location**: `LAT = 42.2688, LON = -71.8088` - coordinates for weather.gov API
 - **Ollama server**: `OLLAMA_BASE = "http://192.168.1.134:11434"` - local Ollama instance
 - **Model**: `MODEL = "mistral:7b"` - currently active model (llama3.2:3b is commented out)
+- **Navidrome server**: `NAVIDROME_BASE = "http://192.168.1.134:4533"` - local Navidrome instance
+- **Navidrome credentials**: `NAVIDROME_USER`, `NAVIDROME_PASS` - authentication for Subsonic API
 
-Update these constants to change location or AI model.
+Update these constants to change location, AI model, or music server.
 
 ## Architecture
 
@@ -62,22 +64,31 @@ Update these constants to change location or AI model.
 - Strips Project Gutenberg headers/footers using regex
 - Returns random excerpt with title and author metadata
 
-**`send_ollama_request(prompt)`** (lines 222-242)
+**`get_navidrome_albums(count=5)`** (lines 229-265)
+- Calls Navidrome/Subsonic API to fetch random albums
+- Uses URL encoding for password authentication
+- Returns list of dicts with album name, artist, year, and genres array
+
+**`send_ollama_request(prompt)`** (lines 268-286)
 - Sends non-streaming request to local Ollama API
 - Returns generated text response
 
-**`format_weather(weather_data)`** (lines 246-261)
-- Formats weather dict into human-readable strings
-- Returns dict with overnight, sunrise, and today formatted strings
+**`format_weather(weather_data)`** (lines 289-302)
+- Formats weather dict into human-readable string
+- Returns single string with overnight, sunrise, and today forecasts
 
-**`format_literature(literature_data)`** (lines 264-273)
+**`format_literature(literature_data)`** (lines 305-314)
 - Formats literature dict into human-readable string
 - Includes title, author with birth/death years, and excerpt
+
+**`format_albums(album_data)`** (lines 317-327)
+- Formats album list into numbered, human-readable string
+- Includes album name, artist, year, and genres for each entry
 
 ## Development Roadmap
 
 ### Phase 1: Core Pipeline
-- [ ] Implement Navidrome API integration (authentication + fetch 5 random albums)
+- [x] Implement Navidrome API integration (authentication + fetch 5 random albums)
 - [ ] Create music curation prompt (select 1 album based on literature pairing)
 - [ ] Design synthesis layer prompt (extract themes/metaphors/mood from all sources)
 - [ ] Design composition layer prompt (convert synthesis to urgent wake-up message)
