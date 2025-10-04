@@ -18,7 +18,7 @@ from datetime import datetime
 from .llm import MODEL, IMAGE_MODEL
 
 # Default output directory
-BASE_DIR = "./tmp"
+BASE_DIR = "./data"
 
 
 class IOManager:

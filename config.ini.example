@@ -3,29 +3,39 @@
 # config.ini is gitignored and won't be committed
 
 [weather]
-# Weather.gov API coordinates (default: Worcester, MA area)
-lat = 42.2688
-lon = -71.8088
-user_agent = DailyGreetingYggdrasil/1.0
+lat = 0.00
+lon = 0.00
+user_agent = DailyGreeting/1.0
 
 [ollama]
 # Ollama server configuration
-base_url = http://192.168.1.134:11434
+base_url = http://192.168.1.1:11434
 model = mistral:7b
 image_model = gemma3:4b
 
 [navidrome]
 # Navidrome/Subsonic API configuration
-base_url = http://192.168.1.134:4533
+base_url = http://192.168.1.1:4533
 username = your_username
 password = your_password
 client_name = DailyGreeting
 
+[literature]
+# Literature excerpt parameters
+length = 600
+padding = 2000
+
+[composition]
+# Greeting message length parameters (for lognormal distribution)
+mean_length = 140
+q1_length = 100
+min_length = 80
+
 [tts]
 # Piper TTS configuration
-model_path = models/en_US-ryan-high.onnx
+model_path = ./models/en_US-ryan-high.onnx
 length_scale = 1.15
 
 [io]
 # Output directory configuration
-base_dir = ./tmp
+base_dir = ./data

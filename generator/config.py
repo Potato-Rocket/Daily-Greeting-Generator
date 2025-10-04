@@ -51,7 +51,7 @@ def apply_config(config_dict):
         logging.info("No config file found, using defaults")
         return
 
-    from . import data_sources, llm, tts, io_manager
+    from . import data_sources, llm, tts, io_manager, pipeline
 
     # Weather configuration
     if "weather.lat" in config_dict:
@@ -78,6 +78,20 @@ def apply_config(config_dict):
         data_sources.NAVIDROME_PASS = config_dict["navidrome.password"]
     if "navidrome.client_name" in config_dict:
         data_sources.NAVIDROME_CLIENT = config_dict["navidrome.client_name"]
+
+    # Literature configuration
+    if "literature.length" in config_dict:
+        data_sources.LITERATURE_LENGTH = int(config_dict["literature.length"])
+    if "literature.padding" in config_dict:
+        data_sources.LITERATURE_PADDING = int(config_dict["literature.padding"])
+
+    # Composition configuration
+    if "composition.mean_length" in config_dict:
+        pipeline.MESSAGE_MEAN_LEN = int(config_dict["composition.mean_length"])
+    if "composition.q1_length" in config_dict:
+        pipeline.MESSAGE_Q1_LEN = int(config_dict["composition.q1_length"])
+    if "composition.min_length" in config_dict:
+        pipeline.MESSAGE_MIN_LEN = int(config_dict["composition.min_length"])
 
     # TTS configuration
     if "tts.model_path" in config_dict:

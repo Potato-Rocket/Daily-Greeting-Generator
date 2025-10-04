@@ -12,8 +12,6 @@ Stages:
 5. Synthesis layer
 6. Composition layer
 7. TTS synthesis
-
-Outputs saved to: ./tmp/{YYYY-MM-DD}/
 """
 
 import json

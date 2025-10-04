@@ -17,15 +17,19 @@ import time
 
 
 # Weather.gov API configuration
-LAT = 42.2688
-LON = -71.8088
-USER_AGENT = "DailyGreetingYggdrasil/1.0"
+LAT = 0.0
+LON = 0.0
+USER_AGENT = "DailyGreeting/1.0"
 
 # Navidrome server configuration
 NAVIDROME_BASE = "http://192.168.1.134:4533"
-NAVIDROME_USER = "oscar"
-NAVIDROME_PASS = "0U&Hy7#2IwMIYN"
-NAVIDROME_CLIENT = "dailygreeting"
+NAVIDROME_USER = "username"
+NAVIDROME_PASS = "password"
+NAVIDROME_CLIENT = "DailyGreeting"
+
+# Literature excerpt parameters
+LITERATURE_LENGTH = 600
+LITERATURE_PADDING = 2000
 
 
 def get_weather_data():
@@ -111,7 +115,7 @@ def get_weather_data():
         return None
 
 
-def get_random_literature(length=600, padding=2000):
+def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
     """
     Retrieve a random excerpt from an English book using the Gutendex API.
 
