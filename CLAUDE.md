@@ -4,12 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Daily Greeting is a Python script that generates personalized morning wake-up messages by combining:
-1. **Weather data** from weather.gov API (overnight, sunrise, and daily forecasts)
-2. **Literary excerpts** from random books via the Gutendex API (Project Gutenberg)
-3. **AI text generation** using a local Ollama instance to create atmospheric wake-up messages
+Daily Greeting is an automated wake-up system that generates personalized morning messages by combining multiple data sources through a multi-stage LLM pipeline, then delivers them via text-to-speech at sunrise.
 
-The script fetches weather conditions, pulls a random literature excerpt, and uses an LLM to synthesize these into a creative morning greeting.
+### Goal
+Create urgent, whimsical wake-up messages that stimulate consciousness through creative synthesis of environmental and cultural data.
+
+### Data Sources
+1. **Weather data** from weather.gov API (overnight, sunrise, and daily forecasts)
+2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
+3. **Music metadata** from Navidrome server (5 random albums → curated selection)
+
+### LLM Pipeline
+1. **Music curation**: Select 1 album from 5 based on pairing with literature excerpt
+2. **Synthesis layer**: Extract themes, metaphors, mood, and sensory anchors from weather + literature + music (no wake-up context)
+3. **Composition layer**: Transform synthesis output into urgent wake-up message
+
+### Delivery Architecture
+- **Generation server** (home server, i7/GTX1650): Runs at 2am daily, generates greeting, renders via Coqui TTS
+- **Playback server** (FitPC3 music server): Flask endpoint receives audio, calculates sunrise time
+- **Sunrise playback**: Script checks every 5 minutes if within sunrise window (with configurable offset), plays audio through room speakers
 
 ## Commands
 
@@ -53,7 +66,27 @@ Update these constants to change location or AI model.
 - Sends non-streaming request to local Ollama API
 - Returns generated text response
 
-**`create_prompt(weather_data, literature_data)`** (lines 245-277)
-- Formats weather and literature into a structured prompt
-- Uses lognormal distribution for variable message length (around 140 words)
-- Instructs model to create atmospheric, metaphorical wake-up message
+**`format_weather(weather_data)`** (lines 246-261)
+- Formats weather dict into human-readable strings
+- Returns dict with overnight, sunrise, and today formatted strings
+
+**`format_literature(literature_data)`** (lines 264-273)
+- Formats literature dict into human-readable string
+- Includes title, author with birth/death years, and excerpt
+
+## Development Roadmap
+
+### Phase 1: Core Pipeline
+- [ ] Implement Navidrome API integration (authentication + fetch 5 random albums)
+- [ ] Create music curation prompt (select 1 album based on literature pairing)
+- [ ] Design synthesis layer prompt (extract themes/metaphors/mood from all sources)
+- [ ] Design composition layer prompt (convert synthesis to urgent wake-up message)
+
+### Phase 2: Audio Delivery
+- [ ] Integrate Coqui TTS container for audio rendering
+- [ ] Build Flask endpoint on FitPC3 to receive audio files
+
+### Phase 3: Playback Automation
+- [ ] Create sunrise calculation script with configurable offset
+- [ ] Write 5-minute interval checker script for playback at sunrise
+- [ ] Set up 2am daily cron job for greeting generation pipeline
