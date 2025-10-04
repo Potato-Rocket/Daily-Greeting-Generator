@@ -17,16 +17,19 @@ from datetime import datetime
 
 from .llm import MODEL, IMAGE_MODEL
 
+# Default output directory
+BASE_DIR = "./tmp"
+
 
 class IOManager:
     """Manages all file I/O for pipeline execution."""
 
-    def __init__(self, base_dir="./tmp"):
+    def __init__(self, base_dir=BASE_DIR):
         """
         Initialize IOManager with dated subdirectory.
 
         Args:
-            base_dir: Base directory for all outputs (default: ./tmp)
+            base_dir: Base directory for all outputs (default: BASE_DIR constant)
         """
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(exist_ok=True)

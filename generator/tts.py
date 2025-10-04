@@ -6,6 +6,7 @@ Handles audio rendering using Piper TTS.
 
 import wave
 import logging
+import time
 
 from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
@@ -28,6 +29,7 @@ def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
     Returns:
         str: Path to generated audio file, or None on failure
     """
+
     try:
         logging.info(f"Loading Piper voice model from {model_path}")
         voice = PiperVoice.load(model_path)
@@ -37,11 +39,13 @@ def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
         # Configure synthesis parameters
         syn_config = SynthesisConfig(length_scale=LENGTH_SCALE)
 
+        start_time = time.time()
         with wave.open(str(output_path), 'wb') as wav_file:
             # Use synthesize_wav to handle audio generation and WAV writing
             voice.synthesize_wav(text, wav_file, syn_config=syn_config)
 
-        logging.info("TTS synthesis complete")
+        elapsed = time.time() - start_time
+        logging.info(f"TTS synthesis complete ({elapsed:.2f}s)")
         return str(output_path)
 
     except Exception as e:

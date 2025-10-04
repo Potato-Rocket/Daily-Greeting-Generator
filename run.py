@@ -10,7 +10,7 @@ Stages:
 3. Album selection
 4. Album art analysis
 5. Synthesis layer
-6. Composition layer (TODO)
+6. Composition layer
 7. TTS synthesis
 
 Outputs saved to: ./tmp/{YYYY-MM-DD}/
@@ -19,6 +19,7 @@ Outputs saved to: ./tmp/{YYYY-MM-DD}/
 import json
 import logging
 
+from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.data_sources import get_weather_data
 from generator.pipeline import (
@@ -33,6 +34,10 @@ from generator.tts import synthesize_greeting
 
 def main():
     """Run the full pipeline iteration."""
+
+    # Load configuration overrides
+    config = load_config()
+    apply_config(config)
 
     # Initialize I/O manager and logging
     io_manager = IOManager()

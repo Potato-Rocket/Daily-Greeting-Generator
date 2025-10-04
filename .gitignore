@@ -3,3 +3,6 @@ tmp/
 .venv/
 models/
 .claude/
+
+# Local configuration (use config.ini.example as template)
+config.ini
