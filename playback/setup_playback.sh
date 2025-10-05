@@ -45,7 +45,7 @@ pip install -r "$BASE_DIR/requirements.txt"
 # Make scripts executable
 echo "Making scripts executable..."
 chmod +x "$BASE_DIR/receive_greeting.py"
-chmod +x "$BASE_DIR/greeting_playback.sh"
+chmod +x "$BASE_DIR/check_sunrise.sh"
 
 # Install systemd service (needs to be updated with absolute paths)
 echo ""
@@ -65,17 +65,17 @@ sudo systemctl status greeting.service --no-pager
 # Setup cron job for sunrise checker
 echo ""
 echo "Setting up cron job for sunrise checker..."
-CRON_LINE="*/5 * * * * $BASE_DIR/greeting_playback.sh"
+CRON_LINE="*/5 * * * * $BASE_DIR/check_sunrise.sh"
 
 # Check if cron job already exists
-if crontab -l 2>/dev/null | grep -q "greeting_playback.sh"; then
+if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
     echo "Cron job already exists, skipping..."
 else
     # Add cron job
     (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
 
     # Verify it was actually added
-    if crontab -l 2>/dev/null | grep -q "greeting_playback.sh"; then
+    if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
         echo "Cron job added (runs every 5 minutes)"
     else
         echo "ERROR: Failed to add cron job. Please add manually:"

@@ -20,11 +20,11 @@ BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 GREETING_FILE = DATA_DIR / "greeting.wav"
 LOG_FILE = DATA_DIR / "receiver.log"
-CONFIG_FILE = BASE_DIR / "playback_config.ini"
+CONFIG_FILE = BASE_DIR / "config.ini"
 SCHEDULE_FILE = DATA_DIR / ".playback_schedule"
-PORT = 7000
 
 # Default configuration
+DEFAULT_PORT = 7000
 DEFAULT_LAT = 0.0
 DEFAULT_LON = 0.0
 DEFAULT_OFFSET = 0
@@ -49,9 +49,10 @@ def load_config():
     Load playback configuration from INI file.
 
     Returns:
-        dict: Configuration with 'lat', 'lon', 'offset_minutes' keys
+        dict: Configuration with 'port', 'lat', 'lon', 'offset_minutes' keys
     """
     config = {
+        'port': DEFAULT_PORT,
         'lat': DEFAULT_LAT,
         'lon': DEFAULT_LON,
         'offset_minutes': DEFAULT_OFFSET
@@ -65,9 +66,17 @@ def load_config():
         parser = configparser.ConfigParser()
         parser.read(CONFIG_FILE)
 
+        # Load server configuration
+        if 'server' in parser:
+            config['port'] = parser['server'].getint('port', DEFAULT_PORT)
+
+        # Load location configuration
+        if 'location' in parser:
+            config['lat'] = parser['location'].getfloat('lat', DEFAULT_LAT)
+            config['lon'] = parser['location'].getfloat('lon', DEFAULT_LON)
+
+        # Load playback configuration
         if 'playback' in parser:
-            config['lat'] = parser['playback'].getfloat('lat', DEFAULT_LAT)
-            config['lon'] = parser['playback'].getfloat('lon', DEFAULT_LON)
             config['offset_minutes'] = parser['playback'].getint('offset_minutes', DEFAULT_OFFSET)
 
         logging.debug(f"Loaded config: {config}")
@@ -80,7 +89,10 @@ def load_config():
 
 def calculate_sunrise_time(config):
     """
-    Calculate tomorrow's sunrise time.
+    Calculate today's sunrise time with configured offset.
+
+    Since greetings are generated at 2am, "today" refers to the upcoming
+    sunrise later this morning.
 
     Args:
         config: Configuration dict with lat, lon, offset_minutes
@@ -90,7 +102,7 @@ def calculate_sunrise_time(config):
     """
     try:
         location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
-        # Calculate for today
+        # Calculate sunrise for today (greeting generated before sunrise at 2am)
         s = sun(location.observer, date=datetime.now())
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
@@ -168,5 +180,7 @@ def receive_greeting():
 
 
 if __name__ == '__main__':
-    logging.info(f"Starting Flask greeting receiver on port {PORT}")
-    app.run(host='0.0.0.0', port=PORT)
+    config = load_config()
+    port = config['port']
+    logging.info(f"Starting Flask greeting receiver on port {port}")
+    app.run(host='0.0.0.0', port=port)

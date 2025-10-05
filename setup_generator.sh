@@ -13,7 +13,7 @@ mkdir -p data models
 # Copy config template if config doesn't exist
 if [ ! -f config.ini ]; then
     echo "Creating config.ini from template..."
-    cp config.ini.example config.ini
+    cp generator_config.ini.example config.ini
     echo ""
     echo "IMPORTANT: Edit config.ini with your settings:"
     echo "   - Weather coordinates"
@@ -72,7 +72,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Setup cron job for daily execution at 2am
 echo ""
 echo "Setting up cron job for daily execution..."
-CRON_LINE="0 2 * * * cd $SCRIPT_DIR && $SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/main.py >> $SCRIPT_DIR/data/cron.log 2>&1"
+CRON_LINE="0 2 * * * cd $SCRIPT_DIR && $SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/main.py"
 
 # Check if cron job already exists
 if crontab -l 2>/dev/null | grep -q "main.py"; then
@@ -89,4 +89,4 @@ echo ""
 echo "Next steps:"
 echo "1. Edit config.ini with your settings"
 echo "2. Test with: $SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/main.py"
-echo "3. Monitor cron execution: tail -f $SCRIPT_DIR/data/cron.log"
+echo "3. Monitor execution: tail -f $SCRIPT_DIR/data/\$(date +%Y-%m-%d)/log_\$(date +%Y-%m-%d).txt"

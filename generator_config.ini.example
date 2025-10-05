@@ -17,8 +17,8 @@ image_model = gemma3:4b
 # Navidrome/Subsonic API configuration
 [navidrome]
 base_url = http://192.168.1.134:4533
-username = oscar
-password = 0U&Hy7#2IwMIYN
+username = username
+password = password
 client_name = DailyGreeting
 
 # Literature excerpt parameters

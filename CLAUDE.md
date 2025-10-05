@@ -164,7 +164,7 @@ Copy from `playback/playback_config.ini.example` and customize:
 │
 ├── playback/                            # Playback server components (FitPC3)
 │   ├── receive_greeting.py              # Flask API for receiving audio
-│   ├── greeting_playback.sh             # Sunrise checker script (cron every 5 min)
+│   ├── check_sunrise.sh                 # Sunrise checker script (cron every 5 min)
 │   ├── greeting.service                 # Systemd service template for Flask
 │   ├── playback_config.ini.example      # Playback config template
 │   ├── requirements.txt                 # Python dependencies (flask, astral)
@@ -176,14 +176,13 @@ Copy from `playback/playback_config.ini.example` and customize:
 │   └── test_tts.py
 │
 ├── data/                                # Pipeline output (gitignored)
-│   ├── YYYY-MM-DD/                      # Dated run directories
-│   │   ├── pipeline_YYYY-MM-DD.txt      # LLM prompts and responses
-│   │   ├── log_YYYY-MM-DD.txt           # Execution log
-│   │   ├── data_YYYY-MM-DD.json         # Structured data from all stages
-│   │   ├── greeting_YYYY-MM-DD.txt      # Final greeting text
-│   │   ├── greeting_YYYY-MM-DD.wav      # Synthesized audio
-│   │   └── coverart_YYYY-MM-DD.jpg      # Album cover (if analyzed)
-│   └── cron.log                         # Cron execution log
+│   └── YYYY-MM-DD/                      # Dated run directories
+│       ├── pipeline_YYYY-MM-DD.txt      # LLM prompts and responses
+│       ├── log_YYYY-MM-DD.txt           # Execution log
+│       ├── data_YYYY-MM-DD.json         # Structured data from all stages
+│       ├── greeting_YYYY-MM-DD.txt      # Final greeting text
+│       ├── greeting_YYYY-MM-DD.wav      # Synthesized audio
+│       └── coverart_YYYY-MM-DD.jpg      # Album cover (if analyzed)
 │
 └── models/                              # TTS models (downloaded by setup)
     ├── en_US-ryan-high.onnx

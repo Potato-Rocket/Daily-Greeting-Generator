@@ -14,7 +14,7 @@ ssh "$SERVER" "mkdir -p $REMOTE_PATH"
 
 # Copy files using scp
 echo "Copying files..."
-scp greeting_playback.sh \
+scp check_sunrise.sh \
     setup_playback.sh \
     greeting.service \
     playback_config.ini.example \
