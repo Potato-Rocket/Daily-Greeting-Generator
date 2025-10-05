@@ -93,7 +93,7 @@ def select_album(io_manager, literature):
 
 Respond in this exact format strictly:
 REASONING: Two or three sentences considering different options before deciding on the best choice.
-VERDICT: N (N is the number of the selected album from the list above) and nothing else"""
+VERDICT: [number only] (just the number 1-5, nothing else)"""
 
     io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
     evaluation = send_ollama_request(album_prompt)
@@ -211,7 +211,7 @@ THEMES: Three to five abstract themes or concepts present across the sources
 MOOD: Two to four mood descriptors capturing the overall emotional texture
 SENSORY ANCHORS: Three to five concrete sensory details that could serve as metaphorical touchpoints
 SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation
-DISTINCTIVE LANGUAGE: One to three notable phrases, word patterns, structuring quirks, or stylistic features (i.e. literary period/era) from the literature. Omit if generic/unremarkable."""
+DISTINCTIVE LANGUAGE: One to three notable phrases, patterns of diction, structuring quirks, or stylistic features (i.e. literary period/era) from the literature. Omit if generic/unremarkable."""
 
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     synthesis = send_ollama_request(synthesis_prompt)

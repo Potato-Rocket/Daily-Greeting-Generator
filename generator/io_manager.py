@@ -188,14 +188,29 @@ def setup_logging(io_manager, logging_level=logging.INFO):
     """
     log_path = io_manager.run_dir / f"log_{io_manager.date_str}.txt"
 
-    logging.basicConfig(
-        level=logging_level,
-        format='[%(asctime)s] %(levelname)s: %(message)s',
-        datefmt='%H:%M:%S',
-        handlers=[
-            logging.FileHandler(log_path, mode='a'),
-            logging.StreamHandler()
-        ]
-    )
+    # Clear existing handlers and reconfigure
+    # (basicConfig only works on first call, so we manually configure)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging_level)
+
+    # Remove existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+
+    # Add file and console handlers
+    file_handler = logging.FileHandler(log_path, mode='a')
+    file_handler.setFormatter(logging.Formatter(
+        '[%(asctime)s] %(levelname)s: %(message)s',
+        datefmt='%H:%M:%S'
+    ))
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter(
+        '[%(asctime)s] %(levelname)s: %(message)s',
+        datefmt='%H:%M:%S'
+    ))
+
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
 
     logging.info(f"Logging to {log_path}")

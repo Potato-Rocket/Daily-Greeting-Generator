@@ -51,12 +51,7 @@ def main():
         logging.info(f"File size: {audio_path.stat().st_size} bytes")
 
         # Send to playback server
-        success = send_to_playback_server(audio_path)
-
-        if success:
-            logging.info("Audio sent successfully to playback server")
-        else:
-            logging.error("Failed to send audio to playback server")
+        send_to_playback_server(audio_path)
 
         logging.info("=== AUDIO DELIVERY TEST COMPLETE ===")
 

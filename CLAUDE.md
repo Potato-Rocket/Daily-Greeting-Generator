@@ -47,49 +47,105 @@ The pipeline uses a multi-stage approach with validation and filtering:
   - `SENSORY ANCHORS`: 3-5 concrete sensory details (colors, textures, temperatures, sounds)
   - `SYMBOLIC ELEMENTS`: 2-4 symbols/images/metaphors for reinterpretation
 
-#### Stage 5: Composition Layer (TODO)
+#### Stage 5: Composition Layer
 - Transform synthesis output into urgent wake-up message
 - Add wake-up context only at this final stage
+- "FORGET the details" instruction encourages abstract residue over literal references
+- Maintains coherent thread while avoiding concrete mentions of source materials
+
+#### Stage 6: TTS Synthesis
+- Convert greeting text to audio using Piper TTS (mono WAV, 22050 Hz)
+- Configurable voice model and speech speed
+- Generated audio saved to dated directory
+
+#### Stage 7: Audio Delivery
+- Send WAV file to playback server via HTTP POST
+- Retry logic: 3 attempts with exponential backoff (2s, 4s, 8s)
+- Smart retry: timeouts/network errors/5xx (skip 4xx client errors)
 
 ### Delivery Architecture
-- **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Piper TTS, sends to playback server
-- **Playback server** (FitPC3 music server): Flask service receives audio, calculates sunrise time for next morning
-- **Sunrise playback**: Bash script checks every 5 minutes (via cron) if within sunrise window, plays audio through room speakers
+- **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Piper TTS, sends to playback server with retry logic
+- **Playback server** (FitPC3 music server): Flask service receives audio on port 7000, calculates sunrise time, stores schedule file
+- **Sunrise playback**: Bash script (`check_sunrise.sh`) checks every 5 minutes via cron, plays audio through room speakers using `aplay -Dplug:default` for automatic mono-to-stereo conversion, sets volume to 100% before playback
 
 ## Commands
 
 ### Generator (home server)
 
-Run pipeline manually:
+**Run pipeline manually:**
 ```bash
 ./venv/bin/python main.py
 ```
 
-Deploy to server:
+**Test specific stages:**
 ```bash
-./deploy_generator.sh
+# Test synthesis + composition only (uses existing data)
+./venv/bin/python tests/test_llm.py
+
+# Test TTS synthesis only (uses existing greeting text)
+./venv/bin/python tests/test_tts.py
+
+# Test audio delivery only (uses existing WAV file)
+./venv/bin/python tests/test_send.py
 ```
 
-Setup (run once after deployment):
+**Deploy to server:**
 ```bash
-./setup_generator.sh  # Creates venv, installs deps, downloads TTS models, sets up cron
+./deploy_generator.sh  # Excludes __pycache__ from deployment
+```
+
+**Setup (run once after deployment):**
+```bash
+./setup_generator.sh  # Creates venv, installs deps, downloads TTS models, sets up 2am cron job
+```
+
+**Monitor execution:**
+```bash
+# View today's log
+tail -f data/$(date +%Y-%m-%d)/log_$(date +%Y-%m-%d).txt
+
+# View today's pipeline trace (LLM prompts/responses)
+less data/$(date +%Y-%m-%d)/pipeline_$(date +%Y-%m-%d).txt
 ```
 
 ### Playback (FitPC3)
 
-Deploy to playback server:
+**Deploy to playback server:**
 ```bash
 cd playback && ./deploy_playback.sh
 ```
 
-Setup (run once after deployment):
+**Setup (run once after deployment):**
 ```bash
-cd playback && ./setup_playback.sh  # Creates venv, installs deps, configures systemd + cron
+cd playback && ./setup_playback.sh  # Creates venv, installs deps, configures systemd + cron with verification
 ```
 
-Check service status:
+**Check service status:**
 ```bash
 sudo systemctl status greeting.service
+sudo systemctl restart greeting.service  # If needed
+```
+
+**Monitor logs:**
+```bash
+# Flask receiver logs
+tail -f /home/oscar/daily-greeting/data/receiver.log
+
+# Sunrise checker logs (appears after first greeting received)
+tail -f /home/oscar/daily-greeting/data/checker.log
+
+# Verify cron is running
+grep CRON /var/log/auth.log | tail -20
+```
+
+**Verify playback setup:**
+```bash
+# Check sunrise schedule
+cat /home/oscar/daily-greeting/data/.playback_schedule
+date -d @$(cat /home/oscar/daily-greeting/data/.playback_schedule)
+
+# Test audio manually
+aplay -Dplug:default /home/oscar/daily-greeting/data/greeting.wav
 ```
 
 ## Configuration
@@ -274,11 +330,20 @@ Copy from `playback/playback_config.ini.example` and customize:
 - [x] Set up 2am daily cron job
 - [x] Configure systemd service for Flask
 
-### Phase 4: Refinement (In Progress)
-- [ ] Fine-tune composition prompts
-- [ ] Optimize TTS voice/speed settings
-- [ ] Add error recovery and retry logic
-- [ ] Implement monitoring/alerting
+### Phase 4: Reliability & Testing ✅
+- [x] Add retry logic with exponential backoff for audio delivery
+- [x] Fix Flask duplicate logging (use app.logger)
+- [x] Add test scripts for isolated component testing
+- [x] Improve cron job setup with verification
+- [x] Add audio volume control and mono-to-stereo conversion
+- [x] Switch to append mode for logs (preserve multi-run history)
+
+### Phase 5: Refinement (In Progress)
+- [ ] Fix Ollama GPU utilization (currently not using GTX 1650)
+- [ ] Add mpv album playback after greeting finishes
+- [ ] Fine-tune composition prompts based on greeting quality
+- [ ] Improve album selection prompt clarity
+- [ ] Add monitoring/alerting for pipeline failures
 
 ## Coding Standards
 

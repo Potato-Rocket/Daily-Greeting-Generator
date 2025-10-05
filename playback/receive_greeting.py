@@ -29,19 +29,21 @@ DEFAULT_LAT = 0.0
 DEFAULT_LON = 0.0
 DEFAULT_OFFSET = 0
 
-# Setup logging
-LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
-
 app = Flask(__name__)
+
+# Setup logging using Flask's app logger
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+# Configure Flask's logger to write to our log file
+file_handler = logging.FileHandler(LOG_FILE)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter(
+    '[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+))
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
 
 
 def load_config():
@@ -59,7 +61,7 @@ def load_config():
     }
 
     if not CONFIG_FILE.exists():
-        logging.warning(f"Config file not found: {CONFIG_FILE}, using defaults")
+        app.logger.warning(f"Config file not found: {CONFIG_FILE}, using defaults")
         return config
 
     try:
@@ -79,11 +81,11 @@ def load_config():
         if 'playback' in parser:
             config['offset_minutes'] = parser['playback'].getint('offset_minutes', DEFAULT_OFFSET)
 
-        logging.debug(f"Loaded config: {config}")
+        app.logger.debug(f"Loaded config: {config}")
         return config
 
     except Exception as e:
-        logging.exception(f"Error loading config: {e}, using defaults")
+        app.logger.exception(f"Error loading config: {e}, using defaults")
         return config
 
 
@@ -106,11 +108,11 @@ def calculate_sunrise_time(config):
         s = sun(location.observer, date=datetime.now())
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
-        logging.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
+        app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
         return sunrise
 
     except Exception as e:
-        logging.exception(f"Error calculating sunrise: {e}")
+        app.logger.exception(f"Error calculating sunrise: {e}")
         return None
 
 
@@ -127,10 +129,10 @@ def save_sunrise_time(sunrise_time):
         with open(SCHEDULE_FILE, 'w') as f:
             f.write(f"{sunrise_epoch}\n")
 
-        logging.debug(f"Sunrise time saved: {sunrise_epoch}")
+        app.logger.debug(f"Sunrise time saved: {sunrise_epoch}")
 
     except Exception as e:
-        logging.error(f"Error saving sunrise time: {e}")
+        app.logger.error(f"Error saving sunrise time: {e}")
 
 
 @app.route('/receive', methods=['POST'])
@@ -148,7 +150,7 @@ def receive_greeting():
         # Get audio data
         audio_data = request.data
         if not audio_data:
-            logging.warning("Empty request body")
+            app.logger.warning("Empty request body")
             return jsonify({
                 'status': 'error',
                 'message': 'No audio data received'
@@ -161,7 +163,7 @@ def receive_greeting():
         with open(GREETING_FILE, 'wb') as f:
             f.write(audio_data)
 
-        logging.info("Greeting received and saved")
+        app.logger.info("Greeting received and saved")
 
         # Calculate sunrise time and save schedule
         config = load_config()
@@ -172,7 +174,7 @@ def receive_greeting():
         return jsonify({'status': 'success'}), 200
 
     except Exception as e:
-        logging.exception(f"Error receiving greeting: {e}")
+        app.logger.exception(f"Error receiving greeting: {e}")
         return jsonify({
             'status': 'error',
             'message': str(e)
@@ -182,5 +184,5 @@ def receive_greeting():
 if __name__ == '__main__':
     config = load_config()
     port = config['port']
-    logging.info(f"Starting Flask greeting receiver on port {port}")
-    app.run(host='0.0.0.0', port=port)
+    app.logger.info(f"Starting Flask greeting receiver on port {port}")
+    app.run(host='0.0.0.0', port=port, use_reloader=False)
