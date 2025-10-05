@@ -5,16 +5,14 @@
 set -e
 
 # Determine script directory for relative paths
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BASE_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 echo "Setting up Daily Greeting playback server..."
 echo "Base directory: $BASE_DIR"
 
 # Create required directories
 echo "Creating directories..."
-mkdir -p "$BASE_DIR/data/greetings"
-mkdir -p "$BASE_DIR/playback"
+mkdir -p "$BASE_DIR/data"
 
 # Copy config template if config doesn't exist
 if [ ! -f "$BASE_DIR/playback_config.ini" ]; then
@@ -29,10 +27,20 @@ else
     echo "playback_config.ini already exists, skipping..."
 fi
 
-# Install Python dependencies
+# Create virtual environment if it doesn't exist
 echo ""
+if [ ! -d "$BASE_DIR/venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv "$BASE_DIR/venv"
+else
+    echo "Virtual environment already exists"
+fi
+
+# Install Python dependencies
 echo "Installing Python dependencies..."
-pip3 install --user flask astral
+source "$BASE_DIR/venv/bin/activate"
+pip install --upgrade pip
+pip install -r "$BASE_DIR/playback/requirements.txt"
 
 # Make scripts executable
 echo "Making scripts executable..."

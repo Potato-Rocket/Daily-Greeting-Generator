@@ -11,9 +11,9 @@ echo "Deploying Daily Greeting to $SERVER:$REMOTE_PATH"
 
 # Use rsync with include filters to sync only specified files
 rsync -av --delete \
-  --include='run.py' \
-  --include='setup.sh' \
-  --include='config.ini.example' \
+  --include='main.py' \
+  --include='setup_generator.sh' \
+  --include='generator_config.ini.example' \
   --include='generator/' \
   --include='generator/**' \
   --exclude='*' \

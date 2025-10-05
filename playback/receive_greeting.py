@@ -2,8 +2,8 @@
 """
 Flask API for receiving daily greeting audio files.
 
-Receives WAV files from the generation server and stores them in dated files.
-Also calculates sunrise time and playback window for the checker script.
+Receives WAV files from the generation server and stores to data/greeting.wav.
+Calculates tomorrow's sunrise time for the checker script.
 Runs as a systemd service on the music playback server.
 """
 
@@ -16,16 +16,17 @@ from astral import LocationInfo
 from astral.sun import sun
 
 # Configuration - paths relative to script location
-SCRIPT_DIR = Path(__file__).parent.parent
-GREETING_DIR = SCRIPT_DIR / "data/greetings"
-LOG_FILE = SCRIPT_DIR / "data/receiver.log"
-CONFIG_FILE = SCRIPT_DIR / "playback_config.ini"
-SCHEDULE_FILE = SCRIPT_DIR / "data/.playback_schedule"
+BASE_DIR = Path(__file__).parent
+DATA_DIR = BASE_DIR / "data"
+GREETING_FILE = DATA_DIR / "greeting.wav"
+LOG_FILE = DATA_DIR / "receiver.log"
+CONFIG_FILE = BASE_DIR / "playback_config.ini"
+SCHEDULE_FILE = DATA_DIR / ".playback_schedule"
 PORT = 7000
 
 # Default configuration
-DEFAULT_LAT = 42.27
-DEFAULT_LON = -71.81
+DEFAULT_LAT = 0.0
+DEFAULT_LON = 0.0
 DEFAULT_OFFSET = 0
 
 # Setup logging
@@ -89,9 +90,8 @@ def calculate_sunrise_time(config):
     """
     try:
         location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
-        # Calculate for tomorrow since greeting is generated at 2am for next morning
-        tomorrow = (datetime.now() + timedelta(days=1)).date()
-        s = sun(location.observer, date=tomorrow)
+        # Calculate for today
+        s = sun(location.observer, date=datetime.now())
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
         logging.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
@@ -106,25 +106,16 @@ def save_sunrise_time(sunrise_time):
     """
     Save sunrise epoch time to file for checker script.
 
-    Also resets the played flag by deleting it.
-
     Args:
         sunrise_time: Sunrise datetime
     """
     try:
         sunrise_epoch = int(sunrise_time.timestamp())
 
-        SCHEDULE_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(SCHEDULE_FILE, 'w') as f:
             f.write(f"{sunrise_epoch}\n")
 
         logging.debug(f"Sunrise time saved: {sunrise_epoch}")
-
-        # Reset played flag for new greeting
-        played_flag = SCRIPT_DIR / "data/.played"
-        if played_flag.exists():
-            played_flag.unlink()
-            logging.debug("Played flag reset")
 
     except Exception as e:
         logging.error(f"Error saving sunrise time: {e}")
@@ -135,21 +126,13 @@ def receive_greeting():
     """
     Receive greeting audio file from generation server.
 
-    Expects WAV file in request body with Content-Type: audio/wav
-    Saves to data/greetings/greeting_YYYY-MM-DD.wav
+    Saves to data/greeting.wav (overwrites previous)
+    Calculates and saves tomorrow's sunrise time
 
     Returns:
-        JSON response with status and filename
+        JSON response with status
     """
     try:
-        # Validate content type
-        if request.content_type != 'audio/wav':
-            logging.warning(f"Invalid content type: {request.content_type}")
-            return jsonify({
-                'status': 'error',
-                'message': 'Content-Type must be audio/wav'
-            }), 400
-
         # Get audio data
         audio_data = request.data
         if not audio_data:
@@ -159,20 +142,14 @@ def receive_greeting():
                 'message': 'No audio data received'
             }), 400
 
-        # Create filename with current date
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        filename = f"greeting_{date_str}.wav"
-        filepath = GREETING_DIR / filename
-
         # Ensure directory exists
-        GREETING_DIR.mkdir(parents=True, exist_ok=True)
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Save audio file
-        with open(filepath, 'wb') as f:
+        # Save audio file (overwrites previous)
+        with open(GREETING_FILE, 'wb') as f:
             f.write(audio_data)
 
-        file_size = len(audio_data) / 1024  # KB
-        logging.info(f"Greeting received and saved: {filename} ({file_size:.1f} KB)")
+        logging.info("Greeting received and saved")
 
         # Calculate sunrise time and save schedule
         config = load_config()
@@ -180,11 +157,7 @@ def receive_greeting():
         if sunrise:
             save_sunrise_time(sunrise)
 
-        return jsonify({
-            'status': 'success',
-            'filename': filename,
-            'size_kb': round(file_size, 1)
-        }), 200
+        return jsonify({'status': 'success'}), 200
 
     except Exception as e:
         logging.exception(f"Error receiving greeting: {e}")
@@ -192,12 +165,6 @@ def receive_greeting():
             'status': 'error',
             'message': str(e)
         }), 500
-
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint."""
-    return jsonify({'status': 'ok'}), 200
 
 
 if __name__ == '__main__':

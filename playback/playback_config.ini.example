@@ -8,4 +8,4 @@ lon = -71.81
 
 # Offset in minutes after sunrise to allow playback
 # Window is: sunrise to (sunrise + offset_minutes)
-offset_minutes = 0
+offset_minutes = -15

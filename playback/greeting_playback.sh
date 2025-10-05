@@ -8,8 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASE_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 SCHEDULE_FILE="$BASE_DIR/data/.playback_schedule"
-PLAYED_FLAG="$BASE_DIR/data/.played"
-GREETING_DIR="$BASE_DIR/data/greetings"
+GREETING_FILE="$BASE_DIR/data/greeting.wav"
 LOG_FILE="$BASE_DIR/data/checker.log"
 
 # Logging function
@@ -32,11 +31,6 @@ fi
 # Get current epoch time
 NOW_EPOCH=$(date +%s)
 
-# Check if already played
-if [ -f "$PLAYED_FLAG" ]; then
-    exit 0
-fi
-
 # Check if current time is past sunrise
 if [ "$NOW_EPOCH" -lt "$SUNRISE_EPOCH" ]; then
     exit 0
@@ -44,21 +38,20 @@ fi
 
 log "INFO: Past sunrise time, playing greeting"
 
-# Find most recent greeting file
-GREETING_FILE=$(ls -t "$GREETING_DIR"/greeting_*.wav 2>/dev/null | head -n 1)
-
-if [ -z "$GREETING_FILE" ]; then
+# Check if greeting file exists
+if [ ! -f "$GREETING_FILE" ]; then
     log "ERROR: No greeting file found"
     exit 1
 fi
 
-log "INFO: Playing $(basename "$GREETING_FILE")"
+log "INFO: Playing greeting"
 
 # Play greeting with aplay
 if aplay "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
     log "INFO: Playback completed successfully"
-    # Mark as played
-    touch "$PLAYED_FLAG"
+    # Mark as played by adding 1 day (86400 seconds) to sunrise time
+    NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
+    echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
 else
     log "ERROR: Playback failed"
     exit 1

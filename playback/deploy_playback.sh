@@ -11,8 +11,11 @@ echo "Deploying playback server to $SERVER:$REMOTE_PATH"
 
 # Use rsync with include filters to sync only playback files
 rsync -av --delete \
-  --include='playback/' \
-  --include='playback/**' \
+  --include='greeting_playback.sh' \
+  --include='setup_playback.sh' \
+  --include='greeting.service' \
+  --include='playback_config.ini' \
+  --include='recieve_greeting.py' \
   --exclude='*' \
   ./ "$SERVER:$REMOTE_PATH/"
 
