@@ -11,6 +11,7 @@ echo "Deploying playback server to $SERVER:$REMOTE_PATH"
 
 # Create remote directory if it doesn't exist
 ssh "$SERVER" "mkdir -p $REMOTE_PATH"
+ssh "$SERVER" "mkdir -p $REMOTE_PATH/resources"
 
 # Copy files using scp
 echo "Copying files..."
@@ -21,6 +22,8 @@ scp check_sunrise.sh \
     greeting.service \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"
+
+scp "resources/chime.wav" "$SERVER:$REMOTE_PATH/resources/"
 
 echo "Deployment complete!"
 echo ""

@@ -7,6 +7,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SCHEDULE_FILE="$SCRIPT_DIR/data/.playback_schedule"
+CHIME_FILE="$SCRIPT_DIR/resources/chime.wav"
 GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
 LOG_FILE="$SCRIPT_DIR/data/checker.log"
 
@@ -51,6 +52,9 @@ log "INFO: Playing greeting"
 # Ensure audio is unmuted and at 100% volume
 amixer set Master unmute >> "$LOG_FILE" 2>&1
 amixer set Master 100% >> "$LOG_FILE" 2>&1
+
+# Play chime sound first, chop off trailing silence
+aplay -d 10 "$CHIME_FILE" >> "$LOG_FILE" 2>&1
 
 # Play greeting with aplay (use plug device for automatic channel conversion)
 if aplay -Dplug:default "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then

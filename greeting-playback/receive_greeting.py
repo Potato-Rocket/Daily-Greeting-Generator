@@ -89,18 +89,15 @@ def load_config():
         return config
 
 
-def calculate_sunrise_time(config):
+def get_sunrise_time(config):
     """
-    Calculate today's sunrise time with configured offset.
+    Calculate today's sunrise time with configured offset, then sves to a file for the checker script.
 
     Since greetings are generated at 2am, "today" refers to the upcoming
     sunrise later this morning.
 
     Args:
         config: Configuration dict with lat, lon, offset_minutes
-
-    Returns:
-        datetime: Sunrise time (with offset), or None on error
     """
     try:
         location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
@@ -109,22 +106,13 @@ def calculate_sunrise_time(config):
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
         app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
-        return sunrise
 
     except Exception as e:
         app.logger.exception(f"Error calculating sunrise: {e}")
-        return None
-
-
-def save_sunrise_time(sunrise_time):
-    """
-    Save sunrise epoch time to file for checker script.
-
-    Args:
-        sunrise_time: Sunrise datetime
-    """
+        return
+    
     try:
-        sunrise_epoch = int(sunrise_time.timestamp())
+        sunrise_epoch = int(sunrise.timestamp())
 
         with open(SCHEDULE_FILE, 'w') as f:
             f.write(f"{sunrise_epoch}\n")
@@ -167,9 +155,7 @@ def receive_greeting():
 
         # Calculate sunrise time and save schedule
         config = load_config()
-        sunrise = calculate_sunrise_time(config)
-        if sunrise:
-            save_sunrise_time(sunrise)
+        get_sunrise_time(config)
 
         return jsonify({'status': 'success'}), 200
 
