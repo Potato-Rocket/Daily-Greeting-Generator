@@ -16,6 +16,7 @@ Stages:
 
 import json
 import logging
+from pathlib import Path
 
 from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
@@ -24,8 +25,7 @@ from generator.pipeline import (
     validate_literature,
     select_album,
     analyze_album_art,
-    synthesize_materials,
-    compose_greeting,
+    synthesize_materials
 )
 from generator.tts import synthesize_greeting, send_to_playback_server
 
@@ -36,12 +36,14 @@ def main():
     # Setup basic logging first (will be reconfigured after IOManager init)
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
+    base_dir = Path(__file__).parent
+
     # Load configuration overrides
-    config = load_config()
+    config = load_config(base_dir)
     apply_config(config)
 
     # Initialize I/O manager and full logging
-    io_manager = IOManager()
+    io_manager = IOManager(base_dir)
     setup_logging(io_manager)
 
     logging.info("=== PIPELINE START ===")
@@ -83,14 +85,13 @@ def main():
 
                 # Stage 6: TTS synthesis
                 logging.info("Stage 6: TTS synthesis")
-                audio_path = io_manager.run_dir / f"greeting_{io_manager.date_str}.wav"
-                result = synthesize_greeting(greeting, audio_path)
+                result = synthesize_greeting(greeting, io_manager)
 
                 if result:
                     logging.info("Audio saved successfully")
 
                     logging.info("Stage 7: Sending to playback server")
-                    send_success = send_to_playback_server(audio_path)
+                    send_success = send_to_playback_server(result)
 
                     if not send_success:
                         logging.warning("Failed to send audio to playback server")

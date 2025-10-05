@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
-from generator.pipeline import synthesize_materials, compose_greeting
+from generator.pipeline import synthesize_materials
 
 
 def main():
@@ -33,12 +33,14 @@ def main():
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
+    base_dir = Path(__file__).parent.parent
+
     # Load configuration overrides
-    config = load_config()
+    config = load_config(base_dir)
     apply_config(config)
 
     # Initialize I/O manager and full logging
-    io_manager = IOManager()
+    io_manager = IOManager(base_dir)
     setup_logging(io_manager, logging.DEBUG)
 
     logging.info("=== TEST PIPELINE START ===")

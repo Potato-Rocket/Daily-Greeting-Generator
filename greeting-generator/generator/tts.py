@@ -14,25 +14,29 @@ from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
 
 # Piper TTS configuration
-MODEL_PATH = "models/en_US-ryan-high.onnx"
+MODEL_NAME = "en_US-lessac-high"
 LENGTH_SCALE = 1.15  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
 
 # Playback server address
 SERVER_ADDR = "http://192.168.1.36:7000"
 
 
-def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
+def synthesize_greeting(text, io_manager):
     """
     Convert greeting text to speech using Piper TTS and save as WAV file.
 
     Args:
         text: Greeting text to synthesize
-        output_path: Path to save WAV file
-        model_path: Path to .onnx model file (default: MODEL_PATH)
-
+        io_manager: The IOManager set up with the correct paths
     Returns:
         str: Path to generated audio file, or None on failure
     """
+    model_path = io_manager.model_dir / f"{MODEL_NAME}.onnx"
+
+    if not model_path.exists():
+        return None
+    
+    output_path = io_manager.data_dir / f"greeting_{io_manager.date_str}.wav"
 
     try:
         logging.info(f"Loading Piper voice model from {model_path}")

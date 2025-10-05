@@ -30,12 +30,14 @@ def main():
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
+    base_dir = Path(__file__).parent.parent
+
     # Load configuration overrides
-    config = load_config()
+    config = load_config(base_dir)
     apply_config(config)
 
     # Initialize I/O manager and full logging
-    io_manager = IOManager()
+    io_manager = IOManager(base_dir)
     setup_logging(io_manager, logging.DEBUG)
 
     logging.info("=== TTS TEST START ===")
@@ -57,13 +59,12 @@ def main():
         logging.info(f"Loaded greeting ({len(greeting)} chars)")
 
         # Synthesize to audio
-        audio_path = io_manager.run_dir / f"greeting_{io_manager.date_str}.wav"
-        result = synthesize_greeting(greeting, audio_path)
+        result = synthesize_greeting(greeting, io_manager)
 
         if result:
             logging.info(f"Audio saved successfully")
             # Update data file with audio path
-            io_manager.update_data_file(audio_path=str(audio_path))
+            io_manager.update_data_file(audio_path=str(result))
         else:
             logging.error("TTS synthesis failed")
 

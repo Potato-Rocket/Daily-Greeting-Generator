@@ -17,14 +17,11 @@ from datetime import datetime
 
 from .llm import MODEL, IMAGE_MODEL
 
-# Default output directory
-BASE_DIR = "./data"
-
 
 class IOManager:
     """Manages all file I/O for pipeline execution."""
 
-    def __init__(self, base_dir=BASE_DIR):
+    def __init__(self, base_dir):
         """
         Initialize IOManager with dated subdirectory.
 
@@ -36,16 +33,21 @@ class IOManager:
 
         # Create dated subdirectory
         self.date_str = datetime.now().strftime("%Y-%m-%d")
-        self.run_dir = self.base_dir / self.date_str
-        self.run_dir.mkdir(exist_ok=True)
+
+        self.data_dir = self.base_dir / "data" / self.date_str
+        self.data_dir.mkdir(exist_ok=True)
+
+        self.model_dir = self.base_dir / "models"
 
         # Pipeline output file handle
         self.pipeline_file = None
 
     def init_pipeline_file(self):
         """Initialize pipeline output file for prompts and responses."""
-        pipeline_path = self.run_dir / f"pipeline_{self.date_str}.txt"
+
+        pipeline_path = self.data_dir / f"pipeline_{self.date_str}.txt"
         self.pipeline_file = open(pipeline_path, 'a', encoding='utf-8')
+        
         logging.info(f"Pipeline output will be saved to {pipeline_path}")
 
         self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.date_str}.
@@ -89,7 +91,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         Args:
             **kwargs: Field name and value pairs to add/update in JSON
         """
-        data_path = self.run_dir / f"data_{self.date_str}.json"
+        data_path = self.data_dir / f"data_{self.date_str}.json"
 
         # Load existing data if file exists
         if data_path.exists():
@@ -119,7 +121,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         if date_str is None:
             date_str = self.date_str
 
-        data_path = self.base_dir / date_str / f"data_{date_str}.json"
+        data_path = self.data_dir / f"data_{date_str}.json"
 
         if not data_path.exists():
             logging.error(f"Data file not found: {data_path}")
@@ -145,7 +147,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
             logging.warning("No greeting text to save.")
             return
 
-        greeting_path = self.run_dir / f"greeting_{self.date_str}.txt"
+        greeting_path = self.data_dir / f"greeting_{self.date_str}.txt"
         with open(greeting_path, 'w', encoding='utf-8') as f:
             f.write(greeting_text)
         logging.info(f"Saved greeting to {greeting_path}")
@@ -157,7 +159,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         Args:
             image_data: Raw bytes of JPEG image
         """
-        coverart_path = self.run_dir / f"coverart_{self.date_str}.jpg"
+        coverart_path = self.data_dir / f"coverart_{self.date_str}.jpg"
         with open(coverart_path, "wb") as f:
             f.write(image_data)
         logging.info(f"Saved cover art to {coverart_path}")
@@ -186,7 +188,7 @@ def setup_logging(io_manager, logging_level=logging.INFO):
     Args:
         io_manager: IOManager instance for determining log file path
     """
-    log_path = io_manager.run_dir / f"log_{io_manager.date_str}.txt"
+    log_path = io_manager.data_dir / f"log_{io_manager.date_str}.txt"
 
     # Clear existing handlers and reconfigure
     # (basicConfig only works on first call, so we manually configure)

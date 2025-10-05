@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 
-def load_config():
+def load_config(base_dir):
     """
     Load configuration from config.ini file.
 
@@ -19,7 +19,7 @@ def load_config():
     Returns:
         dict: Configuration values as {"section.key": "value"}, or empty dict if no config file
     """
-    config_path = Path(__file__).parent.parent / "config.ini"
+    config_path = Path(base_dir) / "config.ini"
 
     if not config_path.exists():
         return {}
@@ -51,7 +51,7 @@ def apply_config(config_dict):
         logging.info("No config file found, using defaults")
         return
 
-    from . import data_sources, llm, tts, io_manager, pipeline
+    from . import data_sources, llm, tts, pipeline
 
     # Weather configuration
     if "weather.lat" in config_dict:
@@ -94,13 +94,9 @@ def apply_config(config_dict):
         pipeline.MESSAGE_MIN_LEN = int(config_dict["composition.min_length"])
 
     # TTS configuration
-    if "tts.model_path" in config_dict:
-        tts.MODEL_PATH = config_dict["tts.model_path"]
+    if "tts.model_name" in config_dict:
+        tts.MODEL_NAME = config_dict["tts.model_name"]
     if "tts.length_scale" in config_dict:
         tts.LENGTH_SCALE = float(config_dict["tts.length_scale"])
-
-    # I/O configuration
-    if "io.base_dir" in config_dict:
-        io_manager.BASE_DIR = config_dict["io.base_dir"]
 
     logging.info(f"Applied {len(config_dict)} configuration overrides")

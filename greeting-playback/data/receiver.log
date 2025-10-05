@@ -1,0 +1,2 @@
+[2025-10-05 17:05:34] WARNING: Config file not found: /home/oscar/Dropbox/Projects/021 Daily Greeting/greeting-playback/config.ini, using defaults
+[2025-10-05 17:05:34] INFO: Starting Flask greeting receiver on port 7000

@@ -220,7 +220,7 @@ Analyze the following inputs and extract key thematic, composition, atmospheric,
 
 You have studied these synthesis materials. Now FORGET the details. What emotions, images, or messages linger? Write from this residue only.
 
-The listener can see and feel the current weather but has NOT seen the literature or album. Transform literary and musical elements into abstract atmospheric suggestion - no titles, authors, artists, or specific references. Weather details may remain grounded.
+The listener can see and feel the current weather but has NOT seen the literature or album. Transform literary and musical elements into abstract atmospheric suggestion - no titles, authors, artists, or specific references. Weather details may remain more grounded.
 
 Weave these elements into a unified vision. Avoid scattered fragments.
 Maintain an impersonal voice.

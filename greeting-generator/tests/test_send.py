@@ -27,12 +27,14 @@ def main():
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
+    base_dir = Path(__file__).parent.parent
+
     # Load configuration overrides
-    config = load_config()
+    config = load_config(base_dir)
     apply_config(config)
 
     # Initialize I/O manager and full logging
-    io_manager = IOManager()
+    io_manager = IOManager(base_dir)
     setup_logging(io_manager, logging.DEBUG)
 
     logging.info("=== AUDIO DELIVERY TEST START ===")
@@ -40,7 +42,7 @@ def main():
 
     try:
         # Check if audio file exists
-        audio_path = io_manager.run_dir / f"greeting_{io_manager.date_str}.wav"
+        audio_path = io_manager.data_dir / f"greeting_{io_manager.date_str}.wav"
 
         if not audio_path.exists():
             logging.error(f"Audio delivery test aborted: Audio file not found at {audio_path}")

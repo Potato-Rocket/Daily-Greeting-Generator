@@ -34,12 +34,8 @@ min_length = 80
 
 # Piper TTS configuration
 [tts]
-model_path = ./models/en_US-ryan-high.onnx
+model_path = .en_US-lessac-high.onnx
 length_scale = 1.15
-
-# Output directory configuration
-[io]
-base_dir = ./data
 
 # Playback server configuration
 [playback]
