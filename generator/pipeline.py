@@ -250,9 +250,10 @@ def compose_greeting(io_manager, synthesis_output):
 
 {synthesis_output}
 
-You have studied these synthesis materials. Now FORGET the details. What emotions, images, or messages linger? Write from this residue only, keep it abstract.
-Keep it coherent, with a cohesive thread.
-Be sure to maintain an impersonal voice throughout.
+You have studied these synthesis materials. Now FORGET the details. What emotions, images, or messages linger? Write from this residue only.
+
+Weave these elements into a unified vision. Avoid scattered fragments.
+Maintain an impersonal voice.
 
 Please keep the response between {length_bounds[0]} and {length_bounds[1]} words in length. Respond with only the wake-up call and no other text."""
     
