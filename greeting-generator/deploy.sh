@@ -16,8 +16,8 @@ ssh "$SERVER" "mkdir -p $REMOTE_PATH"
 echo "Copying files..."
 scp main.py \
     requirements.txt \
-    setup_generator.sh \
-    generator_config.ini.example \
+    setup.sh \
+    config.ini.example \
     "$SERVER:$REMOTE_PATH/"
 
 echo "Copying generator module..."

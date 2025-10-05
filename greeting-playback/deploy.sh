@@ -15,11 +15,11 @@ ssh "$SERVER" "mkdir -p $REMOTE_PATH"
 # Copy files using scp
 echo "Copying files..."
 scp check_sunrise.sh \
-    setup_playback.sh \
-    greeting.service \
-    playback_config.ini.example \
     receive_greeting.py \
     requirements.txt \
+    setup.sh \
+    greeting.service \
+    config.ini.example \
     "$SERVER:$REMOTE_PATH/"
 
 echo "Deployment complete!"

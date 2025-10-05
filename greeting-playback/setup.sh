@@ -15,16 +15,16 @@ echo "Creating directories..."
 mkdir -p "$BASE_DIR/data"
 
 # Copy config template if config doesn't exist
-if [ ! -f "$BASE_DIR/playback_config.ini" ]; then
-    echo "Creating playback_config.ini from template..."
-    cp "$BASE_DIR/playback_config.ini.example" "$BASE_DIR/config.ini"
+if [ ! -f "$BASE_DIR/config.ini" ]; then
+    echo "Creating config.ini from template..."
+    cp "$BASE_DIR/config.ini.example" "$BASE_DIR/config.ini"
     echo ""
     echo "IMPORTANT: Edit $BASE_DIR/playback_config.ini with your settings:"
     echo "   - Location coordinates (lat/lon)"
     echo "   - Sunrise offset in minutes"
     echo ""
 else
-    echo "playback_config.ini already exists, skipping..."
+    echo "config.ini already exists, skipping..."
 fi
 
 # Create virtual environment if it doesn't exist

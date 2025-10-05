@@ -4,16 +4,20 @@
 
 set -e
 
+# Determine script directory for relative paths
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 echo "Setting up Daily Greeting..."
+echo "Base directory: $BASE_DIR"
 
 # Create required directories
 echo "Creating directories..."
-mkdir -p data models
+mkdir -p "$BASE_DIR/data" "$BASE_DIR/models"
 
 # Copy config template if config doesn't exist
-if [ ! -f config.ini ]; then
+if [ ! -f "$BASE_DIR/config.ini" ]; then
     echo "Creating config.ini from template..."
-    cp generator_config.ini.example config.ini
+    cp "$BASE_DIR/config.ini.example" "$BASE_DIR/config.ini"
     echo ""
     echo "IMPORTANT: Edit config.ini with your settings:"
     echo "   - Weather coordinates"
@@ -30,49 +34,46 @@ echo ""
 echo "Downloading Piper TTS models..."
 
 # Ryan (high quality)
-if [ ! -f models/en_US-ryan-high.onnx ]; then
+if [ ! -f "$BASE_DIR/models/en_US-ryan-high.onnx" ]; then
     echo "Downloading en_US-ryan-high..."
-    curl -L -o models/en_US-ryan-high.onnx \
+    curl -L -o "$BASE_DIR/models/en_US-ryan-high.onnx" \
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx"
-    curl -L -o models/en_US-ryan-high.onnx.json \
+    curl -L -o "$BASE_DIR/models/en_US-ryan-high.onnx.json" \
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json"
 else
     echo "en_US-ryan-high already exists, skipping..."
 fi
 
 # Lessac (high quality)
-if [ ! -f models/en_US-lessac-high.onnx ]; then
+if [ ! -f "$BASE_DIR/models/en_US-lessac-high.onnx" ]; then
     echo "Downloading en_US-lessac-high..."
-    curl -L -o models/en_US-lessac-high.onnx \
+    curl -L -o "$BASE_DIR/models/en_US-lessac-high.onnx" \
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high/en_US-lessac-high.onnx"
-    curl -L -o models/en_US-lessac-high.onnx.json \
+    curl -L -o "$BASE_DIR/models/en_US-lessac-high.onnx.json" \
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high/en_US-lessac-high.onnx.json"
 else
     echo "en_US-lessac-high already exists, skipping..."
 fi
 
-# Create virtual environment if it doesn't exist
+# Create virtual environment if it doesn't exist\
 echo ""
-if [ ! -d venv ]; then
+if [ ! -d "$BASE_DIR/venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3 -m venv "$BASE_DIR/venv"
 else
     echo "Virtual environment already exists"
 fi
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-source venv/bin/activate
+source "$BASE_DIR/venv/bin/activate"
 pip install --upgrade pip
-pip install -r requirements.txt
-
-# Determine script directory for absolute paths in cron
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pip install -r "$BASE_DIR/requirements.txt"
 
 # Setup cron job for daily execution at 2am
 echo ""
 echo "Setting up cron job for daily execution..."
-CRON_LINE="0 2 * * * cd $SCRIPT_DIR && $SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/main.py"
+CRON_LINE="0 2 * * * cd $BASE_DIR && $BASE_DIR/venv/bin/python $BASE_DIR/main.py"
 
 # Check if cron job already exists
 if crontab -l 2>/dev/null | grep -q "main.py"; then
@@ -88,5 +89,5 @@ echo "Setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Edit config.ini with your settings"
-echo "2. Test with: $SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/main.py"
-echo "3. Monitor execution: tail -f $SCRIPT_DIR/data/\$(date +%Y-%m-%d)/log_\$(date +%Y-%m-%d).txt"
+echo "2. Test with: $BASE_DIR/venv/bin/python $BASE_DIR/main.py"
+echo "3. Monitor execution: tail -f $BASE_DIR/data/\$(date +%Y-%m-%d)/log_\$(date +%Y-%m-%d).txt"
