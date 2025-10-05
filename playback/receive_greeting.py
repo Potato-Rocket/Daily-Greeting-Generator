@@ -3,19 +3,30 @@
 Flask API for receiving daily greeting audio files.
 
 Receives WAV files from the generation server and stores them in dated files.
+Also calculates sunrise time and playback window for the checker script.
 Runs as a systemd service on the music playback server.
 """
 
-import os
 import logging
+import configparser
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
+from astral import LocationInfo
+from astral.sun import sun
 
-# Configuration
-GREETING_DIR = Path("/home/oscar/daily-greeting/data/greetings")
-LOG_FILE = Path("/home/oscar/daily-greeting/data/log.txt")
+# Configuration - paths relative to script location
+SCRIPT_DIR = Path(__file__).parent.parent
+GREETING_DIR = SCRIPT_DIR / "data/greetings"
+LOG_FILE = SCRIPT_DIR / "data/receiver.log"
+CONFIG_FILE = SCRIPT_DIR / "playback_config.ini"
+SCHEDULE_FILE = SCRIPT_DIR / "data/.playback_schedule"
 PORT = 7000
+
+# Default configuration
+DEFAULT_LAT = 42.27
+DEFAULT_LON = -71.81
+DEFAULT_OFFSET = 0
 
 # Setup logging
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -30,6 +41,93 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
+
+
+def load_config():
+    """
+    Load playback configuration from INI file.
+
+    Returns:
+        dict: Configuration with 'lat', 'lon', 'offset_minutes' keys
+    """
+    config = {
+        'lat': DEFAULT_LAT,
+        'lon': DEFAULT_LON,
+        'offset_minutes': DEFAULT_OFFSET
+    }
+
+    if not CONFIG_FILE.exists():
+        logging.warning(f"Config file not found: {CONFIG_FILE}, using defaults")
+        return config
+
+    try:
+        parser = configparser.ConfigParser()
+        parser.read(CONFIG_FILE)
+
+        if 'playback' in parser:
+            config['lat'] = parser['playback'].getfloat('lat', DEFAULT_LAT)
+            config['lon'] = parser['playback'].getfloat('lon', DEFAULT_LON)
+            config['offset_minutes'] = parser['playback'].getint('offset_minutes', DEFAULT_OFFSET)
+
+        logging.debug(f"Loaded config: {config}")
+        return config
+
+    except Exception as e:
+        logging.exception(f"Error loading config: {e}, using defaults")
+        return config
+
+
+def calculate_sunrise_time(config):
+    """
+    Calculate tomorrow's sunrise time.
+
+    Args:
+        config: Configuration dict with lat, lon, offset_minutes
+
+    Returns:
+        datetime: Sunrise time (with offset), or None on error
+    """
+    try:
+        location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
+        # Calculate for tomorrow since greeting is generated at 2am for next morning
+        tomorrow = (datetime.now() + timedelta(days=1)).date()
+        s = sun(location.observer, date=tomorrow)
+        sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
+
+        logging.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
+        return sunrise
+
+    except Exception as e:
+        logging.exception(f"Error calculating sunrise: {e}")
+        return None
+
+
+def save_sunrise_time(sunrise_time):
+    """
+    Save sunrise epoch time to file for checker script.
+
+    Also resets the played flag by deleting it.
+
+    Args:
+        sunrise_time: Sunrise datetime
+    """
+    try:
+        sunrise_epoch = int(sunrise_time.timestamp())
+
+        SCHEDULE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(SCHEDULE_FILE, 'w') as f:
+            f.write(f"{sunrise_epoch}\n")
+
+        logging.debug(f"Sunrise time saved: {sunrise_epoch}")
+
+        # Reset played flag for new greeting
+        played_flag = SCRIPT_DIR / "data/.played"
+        if played_flag.exists():
+            played_flag.unlink()
+            logging.debug("Played flag reset")
+
+    except Exception as e:
+        logging.error(f"Error saving sunrise time: {e}")
 
 
 @app.route('/greeting', methods=['POST'])
@@ -75,6 +173,12 @@ def receive_greeting():
 
         file_size = len(audio_data) / 1024  # KB
         logging.info(f"Greeting received and saved: {filename} ({file_size:.1f} KB)")
+
+        # Calculate sunrise time and save schedule
+        config = load_config()
+        sunrise = calculate_sunrise_time(config)
+        if sunrise:
+            save_sunrise_time(sunrise)
 
         return jsonify({
             'status': 'success',

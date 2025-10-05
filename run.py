@@ -92,7 +92,6 @@ def main():
                 result = synthesize_greeting(greeting, audio_path)
 
                 if result:
-                    io_manager.update_data_file(audio_path=str(audio_path))
                     logging.info("Audio saved successfully")
                 else:
                     logging.error("TTS synthesis failed")

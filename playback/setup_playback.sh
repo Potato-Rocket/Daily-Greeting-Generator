@@ -4,19 +4,24 @@
 
 set -e
 
+# Determine script directory for relative paths
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
+
 echo "Setting up Daily Greeting playback server..."
+echo "Base directory: $BASE_DIR"
 
 # Create required directories
 echo "Creating directories..."
-mkdir -p /home/oscar/daily-greeting/data/greetings
-mkdir -p /home/oscar/daily-greeting/playback
+mkdir -p "$BASE_DIR/data/greetings"
+mkdir -p "$BASE_DIR/playback"
 
 # Copy config template if config doesn't exist
-if [ ! -f /home/oscar/daily-greeting/playback_config.ini ]; then
+if [ ! -f "$BASE_DIR/playback_config.ini" ]; then
     echo "Creating playback_config.ini from template..."
-    cp /home/oscar/daily-greeting/playback/playback_config.ini.example /home/oscar/daily-greeting/playback_config.ini
+    cp "$BASE_DIR/playback/playback_config.ini.example" "$BASE_DIR/playback_config.ini"
     echo ""
-    echo "IMPORTANT: Edit /home/oscar/daily-greeting/playback_config.ini with your settings:"
+    echo "IMPORTANT: Edit $BASE_DIR/playback_config.ini with your settings:"
     echo "   - Location coordinates (lat/lon)"
     echo "   - Sunrise offset in minutes"
     echo ""
@@ -31,13 +36,16 @@ pip3 install --user flask astral
 
 # Make scripts executable
 echo "Making scripts executable..."
-chmod +x /home/oscar/daily-greeting/playback/receive_greeting.py
-chmod +x /home/oscar/daily-greeting/playback/check_sunrise.py
+chmod +x "$BASE_DIR/playback/receive_greeting.py"
+chmod +x "$BASE_DIR/playback/check_sunrise.sh"
 
-# Install systemd service
+# Install systemd service (needs to be updated with absolute paths)
 echo ""
 echo "Installing systemd service..."
-sudo cp /home/oscar/daily-greeting/playback/greeting.service /etc/systemd/system/
+# Create temporary service file with correct paths
+sed "s|BASEDIR_PLACEHOLDER|$BASE_DIR|g" "$BASE_DIR/playback/greeting.service" > /tmp/greeting.service.tmp
+sudo cp /tmp/greeting.service.tmp /etc/systemd/system/greeting.service
+rm /tmp/greeting.service.tmp
 sudo systemctl daemon-reload
 sudo systemctl enable greeting.service
 sudo systemctl start greeting.service
@@ -49,10 +57,10 @@ sudo systemctl status greeting.service --no-pager
 # Setup cron job for sunrise checker
 echo ""
 echo "Setting up cron job for sunrise checker..."
-CRON_LINE="*/5 * * * * /usr/bin/python3 /home/oscar/daily-greeting/playback/check_sunrise.py"
+CRON_LINE="*/5 * * * * $BASE_DIR/playback/check_sunrise.sh"
 
 # Check if cron job already exists
-if crontab -l 2>/dev/null | grep -q "check_sunrise.py"; then
+if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
     echo "Cron job already exists, skipping..."
 else
     # Add cron job
@@ -64,10 +72,12 @@ echo ""
 echo "Setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Edit /home/oscar/daily-greeting/playback_config.ini with your coordinates and offset"
+echo "1. Edit $BASE_DIR/playback_config.ini with your coordinates and offset"
 echo "2. Test Flask API: curl http://localhost:7000/health"
 echo "3. Send test greeting from generation server"
-echo "4. Monitor logs: tail -f /home/oscar/daily-greeting/data/log.txt"
+echo "4. Monitor logs:"
+echo "   tail -f $BASE_DIR/data/receiver.log  # Flask API"
+echo "   tail -f $BASE_DIR/data/checker.log   # Sunrise checker"
 echo ""
 echo "Service commands:"
 echo "   sudo systemctl status greeting.service"
