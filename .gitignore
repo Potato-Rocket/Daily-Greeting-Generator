@@ -1,7 +1,7 @@
 __pycache__/
-tmp/
 .venv/
 models/
+data/
 .claude/
 
 # Local configuration (use config.ini.example as template)

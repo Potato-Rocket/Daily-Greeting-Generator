@@ -21,7 +21,16 @@ scp main.py \
     "$SERVER:$REMOTE_PATH/"
 
 echo "Copying generator module..."
-scp -r generator "$SERVER:$REMOTE_PATH/"
+# Create temporary directory without __pycache__
+TEMP_DIR=$(mktemp -d)
+cp -r generator "$TEMP_DIR/"
+find "$TEMP_DIR/generator" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+find "$TEMP_DIR/generator" -type f -name "*.pyc" -delete 2>/dev/null || true
+
+scp -r "$TEMP_DIR/generator" "$SERVER:$REMOTE_PATH/"
+
+# Cleanup
+rm -rf "$TEMP_DIR"
 
 echo "Deployment complete!"
 echo ""

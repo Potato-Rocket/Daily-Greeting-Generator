@@ -52,8 +52,8 @@ log "INFO: Playing greeting"
 amixer set Master unmute >> "$LOG_FILE" 2>&1
 amixer set Master 100% >> "$LOG_FILE" 2>&1
 
-# Play greeting with aplay
-if aplay "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
+# Play greeting with aplay (use plug device for automatic channel conversion)
+if aplay -Dplug:default "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
     log "INFO: Playback completed successfully"
     # Mark as played by adding 1 day (86400 seconds) to sunrise time
     NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
