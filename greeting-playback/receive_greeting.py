@@ -101,11 +101,22 @@ def get_sunrise_time(config):
     """
     try:
         location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
-        # Calculate sunrise for today (greeting generated before sunrise at 2am)
+
+        # calculate sunrise time
         s = sun(location.observer, date=datetime.now())
+        app.logger.info(f"Calculating sunrise for today ({datetime.now().strftime('%Y-%m-%d')})")
+
+        # get the sunrise for today plus offset
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
-        app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')}")
+        # if the sunrise for today has already passed
+        if sunrise.time() < datetime.now().time().replace(tzinfo=None):
+            app.logger.info(f"Sunrise has already happened today!")
+            time = datetime.now() + timedelta(days=1)
+            app.logger.info(f"Calculating sunrise for tomorrow ({time.strftime('%Y-%m-%d')})")
+            s = sun(location.observer, time)
+
+        app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')} UTC")
 
     except Exception as e:
         app.logger.exception(f"Error calculating sunrise: {e}")

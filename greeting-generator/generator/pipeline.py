@@ -210,7 +210,9 @@ def synthesize_materials(io_manager, weather, literature, album):
 
     synthesis_prompt = f"""Compose an urgent, motivating morning wake-up call. 
     
-Analyze the following inputs and extract key thematic, composition, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances that tie the sources together.
+Analyze the following inputs and extract key thematic, composition, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances that tie the sources together. 
+
+Consider whether the literature has any distinctive structural or stylistic elements (i.e. literary period/era, striking diction, word choice, etc.)
 
 {format_weather(weather)}
 
