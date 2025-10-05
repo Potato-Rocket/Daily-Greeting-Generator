@@ -57,47 +57,60 @@ def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
         return None
 
 
-def send_to_playback_server(audio_path):
+def send_to_playback_server(audio_path, max_retries=3):
     """
-    Send audio file to playback server via HTTP POST.
+    Send audio file to playback server via HTTP POST with retry logic.
 
     Args:
         audio_path: Path to WAV file to send
+        max_retries: Maximum number of retry attempts (default: 3)
 
     Returns:
-        bool: True if successfully sent, False on failure
+        bool: True if successfully sent, False on failure after all retries
     """
-    try:
-        audio_path = Path(audio_path)
-        if not audio_path.exists():
-            logging.error(f"Audio file not found: {audio_path}")
-            return False
-
-        endpoint = f"{SERVER_ADDR}/receive"
-
-        logging.info(f"Sending audio to playback server: {endpoint}")
-
-        with open(audio_path, 'rb') as f:
-            response = requests.post(
-                endpoint,
-                data=f,
-                headers={'Content-Type': 'audio/wav'},
-                timeout=30
-            )
-
-        if response.status_code == 200:
-            logging.info("Audio sent successfully to playback server")
-            return True
-        else:
-            logging.error(f"Playback server returned status {response.status_code}: {response.text}")
-            return False
-
-    except requests.exceptions.Timeout:
-        logging.error(f"Connection timeout after 30s - playback server may be unreachable at {endpoint}")
+    audio_path = Path(audio_path)
+    if not audio_path.exists():
+        logging.error(f"Audio file not found: {audio_path}")
         return False
-    except requests.exceptions.ConnectionError as e:
-        logging.error(f"Connection error - cannot reach playback server at {endpoint}: {e}")
-        return False
-    except Exception as e:
-        logging.exception(f"Unexpected error sending audio: {e}")
-        return False
+
+    endpoint = f"{SERVER_ADDR}/receive"
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            if attempt > 1:
+                # Exponential backoff: 2^(attempt-1) seconds (2s, 4s, 8s...)
+                wait_time = 2 ** (attempt - 1)
+                logging.info(f"Retry attempt {attempt}/{max_retries} after {wait_time}s wait")
+                time.sleep(wait_time)
+
+            logging.info(f"Sending audio to playback server: {endpoint}")
+
+            with open(audio_path, 'rb') as f:
+                response = requests.post(
+                    endpoint,
+                    data=f,
+                    headers={'Content-Type': 'audio/wav'},
+                    timeout=30
+                )
+
+            if response.status_code == 200:
+                logging.info("Audio sent successfully to playback server")
+                return True
+            else:
+                logging.error(f"Playback server returned status {response.status_code}: {response.text}")
+                # Don't retry on 4xx errors (client errors like 400, 404)
+                if 400 <= response.status_code < 500:
+                    logging.error("Client error - not retrying")
+                    return False
+                # Retry on 5xx server errors
+
+        except requests.exceptions.Timeout:
+            logging.error(f"Connection timeout after 30s (attempt {attempt}/{max_retries})")
+        except requests.exceptions.ConnectionError as e:
+            logging.error(f"Connection error (attempt {attempt}/{max_retries}): {e}")
+        except Exception as e:
+            logging.exception(f"Unexpected error (attempt {attempt}/{max_retries}): {e}")
+
+    # All retries exhausted
+    logging.error(f"Failed to send audio after {max_retries} attempts")
+    return False
