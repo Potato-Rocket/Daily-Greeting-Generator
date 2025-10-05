@@ -131,6 +131,9 @@ Copy from `generator_config.ini.example` and customize:
 
 Copy from `playback/playback_config.ini.example` and customize:
 
+**[server]**
+- `port` - Flask API port (default: 7000)
+
 **[location]**
 - `lat`, `lon` - Coordinates for sunrise calculation
 

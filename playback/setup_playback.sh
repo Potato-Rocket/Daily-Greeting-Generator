@@ -17,7 +17,7 @@ mkdir -p "$BASE_DIR/data"
 # Copy config template if config doesn't exist
 if [ ! -f "$BASE_DIR/playback_config.ini" ]; then
     echo "Creating playback_config.ini from template..."
-    cp "$BASE_DIR/playback_config.ini.example" "$BASE_DIR/playback_config.ini"
+    cp "$BASE_DIR/playback_config.ini.example" "$BASE_DIR/config.ini"
     echo ""
     echo "IMPORTANT: Edit $BASE_DIR/playback_config.ini with your settings:"
     echo "   - Location coordinates (lat/lon)"
@@ -73,7 +73,15 @@ if crontab -l 2>/dev/null | grep -q "greeting_playback.sh"; then
 else
     # Add cron job
     (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
-    echo "Cron job added (runs every 5 minutes)"
+
+    # Verify it was actually added
+    if crontab -l 2>/dev/null | grep -q "greeting_playback.sh"; then
+        echo "Cron job added (runs every 5 minutes)"
+    else
+        echo "ERROR: Failed to add cron job. Please add manually:"
+        echo "  echo '$CRON_LINE' | crontab -"
+        exit 1
+    fi
 fi
 
 echo ""

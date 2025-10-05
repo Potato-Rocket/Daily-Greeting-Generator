@@ -92,6 +92,12 @@ def send_to_playback_server(audio_path):
             logging.error(f"Playback server returned status {response.status_code}: {response.text}")
             return False
 
+    except requests.exceptions.Timeout:
+        logging.error(f"Connection timeout after 30s - playback server may be unreachable at {endpoint}")
+        return False
+    except requests.exceptions.ConnectionError as e:
+        logging.error(f"Connection error - cannot reach playback server at {endpoint}: {e}")
+        return False
     except Exception as e:
         logging.exception(f"Unexpected error sending audio: {e}")
         return False

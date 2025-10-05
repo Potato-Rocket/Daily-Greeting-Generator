@@ -14,7 +14,12 @@ If date is omitted, uses today's date.
 
 import sys
 import logging
+from pathlib import Path
 
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.pipeline import synthesize_materials, compose_greeting
 
@@ -25,7 +30,14 @@ def main():
     # Parse date argument if provided
     date_str = sys.argv[1] if len(sys.argv) > 1 else None
 
-    # Initialize I/O manager and logging
+    # Setup basic logging first
+    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+
+    # Load configuration overrides
+    config = load_config()
+    apply_config(config)
+
+    # Initialize I/O manager and full logging
     io_manager = IOManager()
     setup_logging(io_manager, logging.DEBUG)
 

@@ -45,7 +45,7 @@ class IOManager:
     def init_pipeline_file(self):
         """Initialize pipeline output file for prompts and responses."""
         pipeline_path = self.run_dir / f"pipeline_{self.date_str}.txt"
-        self.pipeline_file = open(pipeline_path, 'w', encoding='utf-8')
+        self.pipeline_file = open(pipeline_path, 'a', encoding='utf-8')
         logging.info(f"Pipeline output will be saved to {pipeline_path}")
 
         self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.date_str}.
@@ -193,7 +193,7 @@ def setup_logging(io_manager, logging_level=logging.INFO):
         format='[%(asctime)s] %(levelname)s: %(message)s',
         datefmt='%H:%M:%S',
         handlers=[
-            logging.FileHandler(log_path),
+            logging.FileHandler(log_path, mode='a'),
             logging.StreamHandler()
         ]
     )

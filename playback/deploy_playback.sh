@@ -9,16 +9,23 @@ REMOTE_PATH="/home/oscar/daily-greeting"
 
 echo "Deploying playback server to $SERVER:$REMOTE_PATH"
 
-# Use rsync with include filters to sync only playback files
-rsync -av --delete \
-  --include='greeting_playback.sh' \
-  --include='setup_playback.sh' \
-  --include='greeting.service' \
-  --include='playback_config.ini.example' \
-  --include='receive_greeting.py' \
-  --include='requirements.txt' \
-  --exclude='*' \
-  ./ "$SERVER:$REMOTE_PATH/"
+# Create remote directory if it doesn't exist
+ssh "$SERVER" "mkdir -p $REMOTE_PATH"
+
+# Copy files using scp
+echo "Copying files..."
+scp greeting_playback.sh \
+    setup_playback.sh \
+    greeting.service \
+    playback_config.ini.example \
+    receive_greeting.py \
+    requirements.txt \
+    "$SERVER:$REMOTE_PATH/"
 
 echo "Deployment complete!"
-echo "Remember to run setup_playback.sh on the server if this is first deployment"
+echo ""
+echo "Next steps:"
+echo "1. SSH to server: ssh $SERVER"
+echo "2. cd $REMOTE_PATH"
+echo "3. Run setup (first time only): ./setup_playback.sh"
+echo "4. Edit config: nano playback_config.ini"

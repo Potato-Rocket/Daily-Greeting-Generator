@@ -5,11 +5,13 @@
 
 # Determine script directory for relative paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BASE_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
-SCHEDULE_FILE="$BASE_DIR/data/.playback_schedule"
-GREETING_FILE="$BASE_DIR/data/greeting.wav"
-LOG_FILE="$BASE_DIR/data/checker.log"
+SCHEDULE_FILE="$SCRIPT_DIR/data/.playback_schedule"
+GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
+LOG_FILE="$SCRIPT_DIR/data/checker.log"
+
+# Ensure data directory exists
+mkdir -p "$SCRIPT_DIR/data"
 
 # Logging function
 log() {
@@ -45,6 +47,10 @@ if [ ! -f "$GREETING_FILE" ]; then
 fi
 
 log "INFO: Playing greeting"
+
+# Ensure audio is unmuted and at 100% volume
+amixer set Master unmute >> "$LOG_FILE" 2>&1
+amixer set Master 100% >> "$LOG_FILE" 2>&1
 
 # Play greeting with aplay
 if aplay "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
