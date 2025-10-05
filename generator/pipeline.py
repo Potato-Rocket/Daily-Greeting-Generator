@@ -183,7 +183,7 @@ Respond with only the description, no other text. Use markdown bullet points."""
 
 def synthesize_materials(io_manager, weather, literature, album):
     """
-    Run synthesis layer to extract thematic/atmospheric elements from all sources.
+    Run synthesis layer to compose final greeting from inputs.
 
     Args:
         io_manager: IOManager instance for output
@@ -192,47 +192,9 @@ def synthesize_materials(io_manager, weather, literature, album):
         album: Album dict with details
 
     Returns:
-        str: Synthesis output with THEMES, MOOD, SENSORY ANCHORS, and SYMBOLIC ELEMENTS sections
+        str: Final daily greeting message
     """
-    logging.info("Starting synthesis layer")
-
-    synthesis_prompt = f"""Analyze the following inputs and extract key thematic, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances that tie the sources together.
-
-{format_weather(weather)}
-
-{format_literature(literature)}
-
-{format_album(album)}
-
-Do not create a narrative or draw conclusions, only identify raw materials.
-
-Respond in this exact format strictly. Use markdown bullets:
-THEMES: Three to five abstract themes or concepts present across the sources
-MOOD: Two to four mood descriptors capturing the overall emotional texture
-SENSORY ANCHORS: Three to five concrete sensory details that could serve as metaphorical touchpoints
-SYMBOLIC ELEMENTS: Two to four symbols, images, or metaphors with potential for reinterpretation
-DISTINCTIVE LANGUAGE: One to three notable phrases, patterns of diction, structuring quirks, or stylistic features (i.e. literary period/era) from the literature. Omit if generic/unremarkable."""
-
-    io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
-    synthesis = send_ollama_request(synthesis_prompt)
-    io_manager.print_section("SYNTHESIS - RESPONSE", synthesis)
-
-    logging.info("Synthesis layer complete")
-
-    return synthesis
-
-
-def compose_greeting(io_manager, synthesis_output):
-    """
-    Run composition layer to transform synthesis into wake-up message.
-
-    Args:
-        io_manager: IOManager instance for output
-        synthesis_output: Synthesis layer output string
-
-    Returns:
-        str: Final greeting message, or None if not yet implemented
-    """
+    
     mu = math.log(MESSAGE_MEAN_LEN)
     sigma = math.log(MESSAGE_MEAN_LEN/MESSAGE_Q1_LEN)
     logging.debug(f"Lognormal with mu={mu:.2f}, sigma={sigma:.2f}")
@@ -244,23 +206,31 @@ def compose_greeting(io_manager, synthesis_output):
     length_bounds = [length - random.randint(1, 10), length + random.randint(1, 10)]
     logging.debug(f"Length bounds are {length_bounds[0]} to {length_bounds[1]} words")
 
-    logging.info("Starting composition layer")
-    
-    greeting_prompt = f"""Compose an urgent, motivating morning wake-up call. Please base your writing strongly on the following elements:
+    logging.info("Starting synthesis layer")
 
-{synthesis_output}
+    synthesis_prompt = f"""Compose an urgent, motivating morning wake-up call. 
+    
+Analyze the following inputs and extract key thematic, composition, atmospheric, and sensory elements. Focus on identifying abstract patterns, emotional textures, and symbolic resonances that tie the sources together.
+
+{format_weather(weather)}
+
+{format_literature(literature)}
+
+{format_album(album)}
 
 You have studied these synthesis materials. Now FORGET the details. What emotions, images, or messages linger? Write from this residue only.
+
+The listener can see and feel the current weather but has NOT seen the literature or album. Transform literary and musical elements into abstract atmospheric suggestion - no titles, authors, artists, or specific references. Weather details may remain grounded.
 
 Weave these elements into a unified vision. Avoid scattered fragments.
 Maintain an impersonal voice.
 
 Please keep the response between {length_bounds[0]} and {length_bounds[1]} words in length. Respond with only the wake-up call and no other text."""
     
-    io_manager.print_section("COMPOSITION - PROMPT", greeting_prompt)
-    greeting = send_ollama_request(greeting_prompt)
-    io_manager.print_section("COMPOSITION - RESPONSE", greeting)
+    io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
+    greeting = send_ollama_request(synthesis_prompt)
+    io_manager.print_section("SYNTHESIS - RESPONSE", greeting)
 
-    logging.info("Composition layer complete")
+    logging.info("Synthesis layer complete")
 
     return greeting

@@ -74,27 +74,22 @@ def main():
 
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
-            synthesis = synthesize_materials(io_manager, weather, literature, album)
-            io_manager.update_data_file(synthesis=synthesis)
-
-            # Stage 6: Composition layer
-            logging.info("Stage 6: Composition")
-            greeting = compose_greeting(io_manager, synthesis)
-
+            greeting = synthesize_materials(io_manager, weather, literature, album)
+            
             if greeting:
                 io_manager.save_greeting(greeting)
                 io_manager.update_data_file(greeting=greeting)
                 logging.info("Greeting generated and saved")
 
-                # Stage 7: TTS synthesis
-                logging.info("Stage 7: TTS synthesis")
+                # Stage 6: TTS synthesis
+                logging.info("Stage 6: TTS synthesis")
                 audio_path = io_manager.run_dir / f"greeting_{io_manager.date_str}.wav"
                 result = synthesize_greeting(greeting, audio_path)
 
                 if result:
                     logging.info("Audio saved successfully")
 
-                    logging.info("Stage 8: Sending to playback server")
+                    logging.info("Stage 7: Sending to playback server")
                     send_success = send_to_playback_server(audio_path)
 
                     if not send_success:

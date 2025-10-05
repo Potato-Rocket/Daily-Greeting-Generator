@@ -65,11 +65,7 @@ def main():
 
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
-            synthesis = synthesize_materials(io_manager, weather, literature, album)
-
-            # Stage 6: Composition layer
-            logging.info("Stage 6: Composition")
-            greeting = compose_greeting(io_manager, synthesis)
+            greeting = synthesize_materials(io_manager, weather, literature, album)
 
             if greeting:
                 io_manager.save_greeting(greeting)
