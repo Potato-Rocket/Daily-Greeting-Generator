@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=oscar
-WorkingDirectory=BASEDIR_PLACEHOLDER/playback
-ExecStart=BASEDIR_PLACEHOLDER/venv/bin/python BASEDIR_PLACEHOLDER/playback/receive_greeting.py
+WorkingDirectory=BASEDIR_PLACEHOLDER
+ExecStart=BASEDIR_PLACEHOLDER/venv/bin/python BASEDIR_PLACEHOLDER/receive_greeting.py
 Restart=always
 RestartSec=10
 

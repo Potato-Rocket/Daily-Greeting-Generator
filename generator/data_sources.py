@@ -17,9 +17,9 @@ import time
 
 
 # Weather.gov API configuration
-LAT = 0.0
-LON = 0.0
-USER_AGENT = "DailyGreeting/1.0"
+lat = 42.27
+lon = -71.81
+user_agent = "DailyGreeting/1.0"
 
 # Navidrome server configuration
 NAVIDROME_BASE = "http://192.168.1.134:4533"

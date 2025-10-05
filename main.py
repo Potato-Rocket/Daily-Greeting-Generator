@@ -27,7 +27,7 @@ from generator.pipeline import (
     synthesize_materials,
     compose_greeting,
 )
-from generator.tts import synthesize_greeting
+from generator.tts import synthesize_greeting, send_to_playback_server
 
 
 def main():
@@ -93,6 +93,13 @@ def main():
 
                 if result:
                     logging.info("Audio saved successfully")
+
+                    logging.info("Stage 8: Sending to playback server")
+                    send_success = send_to_playback_server(audio_path)
+
+                    if not send_success:
+                        logging.warning("Failed to send audio to playback server")
+                    
                 else:
                     logging.error("TTS synthesis failed")
 

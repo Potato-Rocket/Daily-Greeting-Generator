@@ -1,20 +1,24 @@
 """
 Text-to-Speech Module for Daily Greeting Generator
 
-Handles audio rendering using Piper TTS.
+Handles audio rendering using Piper TTS and delivery to playback server.
 """
 
 import wave
 import logging
 import time
+import requests
+from pathlib import Path
 
 from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
 
-
 # Piper TTS configuration
 MODEL_PATH = "models/en_US-ryan-high.onnx"
 LENGTH_SCALE = 1.15  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
+
+# Playback server address
+SERVER_ADDR = "http://192.168.1.36:7000"
 
 
 def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
@@ -51,3 +55,43 @@ def synthesize_greeting(text, output_path, model_path=MODEL_PATH):
     except Exception as e:
         logging.exception(f"TTS synthesis failed: {e}")
         return None
+
+
+def send_to_playback_server(audio_path):
+    """
+    Send audio file to playback server via HTTP POST.
+
+    Args:
+        audio_path: Path to WAV file to send
+
+    Returns:
+        bool: True if successfully sent, False on failure
+    """
+    try:
+        audio_path = Path(audio_path)
+        if not audio_path.exists():
+            logging.error(f"Audio file not found: {audio_path}")
+            return False
+
+        endpoint = f"{SERVER_ADDR}/receive"
+
+        logging.info(f"Sending audio to playback server: {endpoint}")
+
+        with open(audio_path, 'rb') as f:
+            response = requests.post(
+                endpoint,
+                data=f,
+                headers={'Content-Type': 'audio/wav'},
+                timeout=30
+            )
+
+        if response.status_code == 200:
+            logging.info("Audio sent successfully to playback server")
+            return True
+        else:
+            logging.error(f"Playback server returned status {response.status_code}: {response.text}")
+            return False
+
+    except Exception as e:
+        logging.exception(f"Unexpected error sending audio: {e}")
+        return False

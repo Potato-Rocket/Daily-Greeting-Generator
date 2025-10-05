@@ -121,7 +121,7 @@ def save_sunrise_time(sunrise_time):
         logging.error(f"Error saving sunrise time: {e}")
 
 
-@app.route('/greeting', methods=['POST'])
+@app.route('/receive', methods=['POST'])
 def receive_greeting():
     """
     Receive greeting audio file from generation server.

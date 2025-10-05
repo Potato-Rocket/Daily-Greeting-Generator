@@ -17,7 +17,7 @@ mkdir -p "$BASE_DIR/data"
 # Copy config template if config doesn't exist
 if [ ! -f "$BASE_DIR/playback_config.ini" ]; then
     echo "Creating playback_config.ini from template..."
-    cp "$BASE_DIR/playback/playback_config.ini.example" "$BASE_DIR/playback_config.ini"
+    cp "$BASE_DIR/playback_config.ini.example" "$BASE_DIR/playback_config.ini"
     echo ""
     echo "IMPORTANT: Edit $BASE_DIR/playback_config.ini with your settings:"
     echo "   - Location coordinates (lat/lon)"
@@ -40,18 +40,18 @@ fi
 echo "Installing Python dependencies..."
 source "$BASE_DIR/venv/bin/activate"
 pip install --upgrade pip
-pip install -r "$BASE_DIR/playback/requirements.txt"
+pip install -r "$BASE_DIR/requirements.txt"
 
 # Make scripts executable
 echo "Making scripts executable..."
-chmod +x "$BASE_DIR/playback/receive_greeting.py"
-chmod +x "$BASE_DIR/playback/check_sunrise.sh"
+chmod +x "$BASE_DIR/receive_greeting.py"
+chmod +x "$BASE_DIR/greeting_playback.sh"
 
 # Install systemd service (needs to be updated with absolute paths)
 echo ""
 echo "Installing systemd service..."
 # Create temporary service file with correct paths
-sed "s|BASEDIR_PLACEHOLDER|$BASE_DIR|g" "$BASE_DIR/playback/greeting.service" > /tmp/greeting.service.tmp
+sed "s|BASEDIR_PLACEHOLDER|$BASE_DIR|g" "$BASE_DIR/greeting.service" > /tmp/greeting.service.tmp
 sudo cp /tmp/greeting.service.tmp /etc/systemd/system/greeting.service
 rm /tmp/greeting.service.tmp
 sudo systemctl daemon-reload
@@ -65,10 +65,10 @@ sudo systemctl status greeting.service --no-pager
 # Setup cron job for sunrise checker
 echo ""
 echo "Setting up cron job for sunrise checker..."
-CRON_LINE="*/5 * * * * $BASE_DIR/playback/check_sunrise.sh"
+CRON_LINE="*/5 * * * * $BASE_DIR/greeting_playback.sh"
 
 # Check if cron job already exists
-if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
+if crontab -l 2>/dev/null | grep -q "greeting_playback.sh"; then
     echo "Cron job already exists, skipping..."
 else
     # Add cron job
@@ -81,7 +81,7 @@ echo "Setup complete!"
 echo ""
 echo "Next steps:"
 echo "1. Edit $BASE_DIR/playback_config.ini with your coordinates and offset"
-echo "2. Test Flask API: curl http://localhost:7000/health"
+echo "2. Test Flask API: curl -X POST http://localhost:7000/receive -d @test.wav -H 'Content-Type: audio/wav'"
 echo "3. Send test greeting from generation server"
 echo "4. Monitor logs:"
 echo "   tail -f $BASE_DIR/data/receiver.log  # Flask API"
