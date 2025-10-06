@@ -12,7 +12,7 @@ echo "Base directory: $BASE_DIR"
 
 # Create required directories
 echo "Creating directories..."
-mkdir -p "$BASE_DIR/data" "$BASE_DIR/models"
+mkdir -p "$BASE_DIR/data"
 
 # Copy config template if config doesn't exist
 if [ ! -f "$BASE_DIR/config.ini" ]; then
@@ -27,32 +27,6 @@ if [ ! -f "$BASE_DIR/config.ini" ]; then
     echo ""
 else
     echo "config.ini already exists, skipping..."
-fi
-
-# Download Piper TTS models
-echo ""
-echo "Downloading Piper TTS models..."
-
-# Ryan (high quality)
-if [ ! -f "$BASE_DIR/models/en_US-ryan-high.onnx" ]; then
-    echo "Downloading en_US-ryan-high..."
-    curl -L -o "$BASE_DIR/models/en_US-ryan-high.onnx" \
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx"
-    curl -L -o "$BASE_DIR/models/en_US-ryan-high.onnx.json" \
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json"
-else
-    echo "en_US-ryan-high already exists, skipping..."
-fi
-
-# Lessac (high quality)
-if [ ! -f "$BASE_DIR/models/en_US-lessac-high.onnx" ]; then
-    echo "Downloading en_US-lessac-high..."
-    curl -L -o "$BASE_DIR/models/en_US-lessac-high.onnx" \
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high/en_US-lessac-high.onnx"
-    curl -L -o "$BASE_DIR/models/en_US-lessac-high.onnx.json" \
-        "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/high/en_US-lessac-high.onnx.json"
-else
-    echo "en_US-lessac-high already exists, skipping..."
 fi
 
 # Create virtual environment if it doesn't exist\

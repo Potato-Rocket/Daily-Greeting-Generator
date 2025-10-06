@@ -34,8 +34,7 @@ min_length = 80
 
 # Piper TTS configuration
 [tts]
-model_path = .en_US-lessac-high.onnx
-length_scale = 1.15
+length_scale = 1.0
 
 # Playback server configuration
 [playback]

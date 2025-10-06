@@ -10,8 +10,7 @@ REMOTE_PATH="/home/oscar/daily-greeting"
 echo "Deploying playback server to $SERVER:$REMOTE_PATH"
 
 # Create remote directory if it doesn't exist
-ssh "$SERVER" "mkdir -p $REMOTE_PATH"
-ssh "$SERVER" "mkdir -p $REMOTE_PATH/resources"
+ssh "$SERVER" "mkdir -p $REMOTE_PATH" "REMOTE_PATH/resources"
 
 # Copy files using scp
 echo "Copying files..."

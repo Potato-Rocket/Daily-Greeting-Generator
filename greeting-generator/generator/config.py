@@ -94,8 +94,6 @@ def apply_config(config_dict):
         pipeline.MESSAGE_MIN_LEN = int(config_dict["composition.min_length"])
 
     # TTS configuration
-    if "tts.model_name" in config_dict:
-        tts.MODEL_NAME = config_dict["tts.model_name"]
     if "tts.length_scale" in config_dict:
         tts.LENGTH_SCALE = float(config_dict["tts.length_scale"])
 

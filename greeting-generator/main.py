@@ -78,26 +78,26 @@ def main():
             logging.info("Stage 5: Synthesis")
             greeting = synthesize_materials(io_manager, weather, literature, album)
             
-            if greeting:
-                io_manager.save_greeting(greeting)
-                io_manager.update_data_file(greeting=greeting)
-                logging.info("Greeting generated and saved")
+            if not greeting:
+                logging.error("TTS synthesis failed")
+                return
+            
+            io_manager.save_greeting(greeting)
+            io_manager.update_data_file(greeting=greeting)
+            logging.info("Greeting generated and saved")
 
-                # Stage 6: TTS synthesis
-                logging.info("Stage 6: TTS synthesis")
-                result = synthesize_greeting(greeting, io_manager)
+            # Stage 6: TTS synthesis
+            logging.info("Stage 6: TTS synthesis")
+            result = synthesize_greeting(greeting, io_manager)
 
-                if result:
-                    logging.info("Audio saved successfully")
+            if result:
+                logging.info("Audio saved successfully")
 
-                    logging.info("Stage 7: Sending to playback server")
-                    send_success = send_to_playback_server(result)
+                logging.info("Stage 7: Sending to playback server")
+                send_success = send_to_playback_server(result)
 
-                    if not send_success:
-                        logging.warning("Failed to send audio to playback server")
-                    
-                else:
-                    logging.error("TTS synthesis failed")
+                if not send_success:
+                    logging.warning("Failed to send audio to playback server")
 
             logging.info("=== PIPELINE COMPLETE ===")
 

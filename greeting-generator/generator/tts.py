@@ -7,6 +7,7 @@ Handles audio rendering using Piper TTS and delivery to playback server.
 import wave
 import logging
 import time
+import random
 import requests
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from piper.config import SynthesisConfig
 
 # Piper TTS configuration
 MODEL_NAME = "en_US-lessac-high"
-LENGTH_SCALE = 1.15  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
+LENGTH_SCALE = 1.0  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
 
 # Playback server address
 SERVER_ADDR = "http://192.168.1.36:7000"
@@ -31,10 +32,15 @@ def synthesize_greeting(text, io_manager):
     Returns:
         str: Path to generated audio file, or None on failure
     """
-    model_path = io_manager.model_dir / f"{MODEL_NAME}.onnx"
-
-    if not model_path.exists():
+    model_dir = Path(io_manager.model_dir)
+    if not model_dir.exists():
         return None
+
+    models = list(model_dir.glob('*.onnx'))
+    if models is []:
+        return None
+    
+    model_path = random.choice(models)
     
     output_path = io_manager.data_dir / f"greeting_{io_manager.date_str}.wav"
 

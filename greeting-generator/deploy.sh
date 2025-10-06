@@ -20,6 +20,9 @@ scp main.py \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"
 
+echo "Copying TTS models..."
+scp -r models "$SERVER:$REMOTE_PATH"
+
 echo "Copying generator module..."
 # Create temporary directory without __pycache__
 TEMP_DIR=$(mktemp -d)

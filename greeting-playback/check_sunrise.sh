@@ -56,9 +56,6 @@ amixer set Master 100% >> "$LOG_FILE" 2>&1
 # Play chime sound first, chop off trailing silence
 aplay -d 10 "$CHIME_FILE" >> "$LOG_FILE" 2>&1
 
-# Decrease volume of greeting playback
-amixer set Master 70% >> "$LOG_FILE" 2>&1
-
 # Play greeting with aplay (use plug device for automatic channel conversion)
 if aplay -Dplug:default "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
     log "INFO: Playback completed successfully"
