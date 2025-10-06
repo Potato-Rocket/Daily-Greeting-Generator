@@ -115,6 +115,7 @@ def get_sunrise_time(config):
             time = datetime.now() + timedelta(days=1)
             app.logger.info(f"Calculating sunrise for tomorrow ({time.strftime('%Y-%m-%d')})")
             s = sun(location.observer, time)
+            sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
         app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')} UTC")
 
