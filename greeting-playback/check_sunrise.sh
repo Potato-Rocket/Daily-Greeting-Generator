@@ -11,6 +11,8 @@ CHIME_FILE="$SCRIPT_DIR/resources/chime.wav"
 GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
 LOG_FILE="$SCRIPT_DIR/data/checker.log"
 
+NOTIFICATION_PATH="/home/oscar/notifications/play_chime.py"
+
 # Ensure data directory exists
 mkdir -p "$SCRIPT_DIR/data"
 
@@ -54,7 +56,7 @@ amixer set Master unmute >> "$LOG_FILE" 2>&1
 amixer set Master 100% >> "$LOG_FILE" 2>&1
 
 # Play chime sound first, chop off trailing silence
-aplay -d 10 "$CHIME_FILE" >> "$LOG_FILE" 2>&1
+/usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1
 
 # Play greeting with aplay (use plug device for automatic channel conversion)
 if aplay -Dplug:default "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
