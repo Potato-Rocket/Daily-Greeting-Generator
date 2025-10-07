@@ -19,6 +19,7 @@ from astral.sun import sun
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 GREETING_FILE = DATA_DIR / "greeting.wav"
+ALBUM_FILE = "album_id.txt"
 LOG_FILE = DATA_DIR / "receiver.log"
 CONFIG_FILE = BASE_DIR / "config.ini"
 SCHEDULE_FILE = DATA_DIR / ".playback_schedule"
@@ -135,7 +136,7 @@ def get_sunrise_time(config):
         app.logger.error(f"Error saving sunrise time: {e}")
 
 
-@app.route('/receive', methods=['POST'])
+@app.route('/greeting', methods=['POST'])
 def receive_greeting():
     """
     Receive greeting audio file from generation server.
@@ -177,7 +178,6 @@ def receive_greeting():
             'status': 'error',
             'message': str(e)
         }), 500
-
 
 if __name__ == '__main__':
     config = load_config()

@@ -15,7 +15,6 @@ from piper.voice import PiperVoice
 from piper.config import SynthesisConfig
 
 # Piper TTS configuration
-MODEL_NAME = "en_US-lessac-high"
 LENGTH_SCALE = 1.0  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
 
 # Playback server address
@@ -67,12 +66,13 @@ def synthesize_greeting(text, io_manager):
         return None
 
 
-def send_to_playback_server(audio_path, max_retries=3):
+def send_to_playback_server(audio_path, max_retries=5):
     """
     Send audio file to playback server via HTTP POST with retry logic.
 
     Args:
         audio_path: Path to WAV file to send
+        album_id: The chosen album's Navidrome id
         max_retries: Maximum number of retry attempts (default: 3)
 
     Returns:
@@ -83,7 +83,6 @@ def send_to_playback_server(audio_path, max_retries=3):
         logging.error(f"Audio file not found: {audio_path}")
         return False
 
-    endpoint = f"{SERVER_ADDR}/receive"
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -93,13 +92,14 @@ def send_to_playback_server(audio_path, max_retries=3):
                 logging.info(f"Retry attempt {attempt}/{max_retries} after {wait_time}s wait")
                 time.sleep(wait_time)
 
+            endpoint = f"{SERVER_ADDR}/greeting"
+
             logging.info(f"Sending audio to playback server: {endpoint}")
 
             with open(audio_path, 'rb') as f:
                 response = requests.post(
                     endpoint,
                     data=f,
-                    headers={'Content-Type': 'audio/wav'},
                     timeout=30
                 )
 
@@ -113,7 +113,7 @@ def send_to_playback_server(audio_path, max_retries=3):
                     logging.error("Client error - not retrying")
                     return False
                 # Retry on 5xx server errors
-
+            
         except requests.exceptions.Timeout:
             logging.error(f"Connection timeout after 30s (attempt {attempt}/{max_retries})")
         except requests.exceptions.ConnectionError as e:
