@@ -68,3 +68,6 @@ else
     log "ERROR: Playback failed"
     exit 1
 fi
+
+# Play another chime after the greeting is complete
+/usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1

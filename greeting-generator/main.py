@@ -76,10 +76,6 @@ def main():
         logging.info("Stage 5: Synthesis")
         greeting = synthesize_materials(io_manager, weather, literature, album)
         
-        if not greeting:
-            logging.error("TTS synthesis failed")
-            return
-        
         io_manager.save_greeting(greeting)
         io_manager.update_data_file(greeting=greeting)
         logging.info("Greeting generated and saved")

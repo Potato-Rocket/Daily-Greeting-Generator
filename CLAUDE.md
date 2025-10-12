@@ -38,48 +38,50 @@ The pipeline uses a multi-stage approach with validation and filtering:
   - Generate 3-5 bullet points describing colors, composition, style
   - Store analysis text (discard base64 image)
 
-#### Stage 4: Synthesis Layer
-- Extract abstract patterns from all inputs (weather + literature + album)
-- **Critical**: No wake-up context at this stage, only raw materials
-- Prompt format outputs:
-  - `THEMES`: 3-5 abstract concepts (vastness, transition, isolation, harmony)
-  - `MOOD`: 2-4 mood descriptors
-  - `SENSORY ANCHORS`: 3-5 concrete sensory details (colors, textures, temperatures, sounds)
-  - `SYMBOLIC ELEMENTS`: 2-4 symbols/images/metaphors for reinterpretation
-
-#### Stage 5: Composition Layer
-- Transform synthesis output into urgent wake-up message
-- Add wake-up context only at this final stage
+#### Stage 4: Synthesis & Composition (Single-step)
+- Merged synthesis and composition into single prompt for simplicity
+- Analyzes all inputs (weather + literature + album) and directly composes wake-up message
 - "FORGET the details" instruction encourages abstract residue over literal references
 - Maintains coherent thread while avoiding concrete mentions of source materials
+- Reminds LLM that listener can see weather but hasn't seen literature/album
+- Uses lognormal length distribution (mean/Q1/min) to vary greeting length naturally
+- Random voice model selection from available Piper TTS models
 
-#### Stage 6: TTS Synthesis
+#### Stage 5: TTS Synthesis
 - Convert greeting text to audio using Piper TTS (mono WAV, 22050 Hz)
-- Configurable voice model and speech speed
+- Random voice model selection from `models/` directory
+- Configurable speech speed via `length_scale` parameter
 - Generated audio saved to dated directory
 
-#### Stage 7: Audio Delivery
-- Send WAV file to playback server via HTTP POST
-- Retry logic: 3 attempts with exponential backoff (2s, 4s, 8s)
+#### Stage 6: Audio Delivery
+- Send WAV file to playback server via HTTP POST to `/greeting` endpoint
+- Retry logic: 5 attempts with exponential backoff (2s, 4s, 8s, 16s, 32s)
 - Smart retry: timeouts/network errors/5xx (skip 4xx client errors)
+
+#### Stage 7: Notification Chimes
+- Before and after greeting playback, random wind chime sound plays
+- Chimes selected from curated collection (6 variations)
+- 10-second playback limit to trim trailing silence
 
 ### Delivery Architecture
 - **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Piper TTS, sends to playback server with retry logic
 - **Playback server** (FitPC3 music server): Flask service receives audio on port 7000, calculates sunrise time, stores schedule file
-- **Sunrise playback**: Bash script (`check_sunrise.sh`) checks every 5 minutes via cron, plays audio through room speakers using `aplay -Dplug:default` for automatic mono-to-stereo conversion, sets volume to 100% before playback
+- **Sunrise playback**: Bash script (`check_sunrise.sh`) checks every 5 minutes via cron, plays random chime, then greeting through room speakers using `aplay -Dplug:default` for automatic mono-to-stereo conversion, sets volume to 100% before playback, plays another chime after completion
+- **Notification system**: Separate `notifications/` module with wind chime sounds and playback script, shared between greeting system and future notification features
 
 ## Commands
 
-### Generator (home server)
+### Generator (greeting-generator/)
 
 **Run pipeline manually:**
 ```bash
-./venv/bin/python main.py
+cd greeting-generator && ./venv/bin/python main.py
 ```
 
 **Test specific stages:**
 ```bash
-# Test synthesis + composition only (uses existing data)
+cd greeting-generator
+# Test synthesis only (uses existing data)
 ./venv/bin/python tests/test_llm.py
 
 # Test TTS synthesis only (uses existing greeting text)
@@ -91,16 +93,17 @@ The pipeline uses a multi-stage approach with validation and filtering:
 
 **Deploy to server:**
 ```bash
-./deploy_generator.sh  # Excludes __pycache__ from deployment
+cd greeting-generator && ./deploy.sh  # Includes TTS models, excludes __pycache__
 ```
 
 **Setup (run once after deployment):**
 ```bash
-./setup_generator.sh  # Creates venv, installs deps, downloads TTS models, sets up 2am cron job
+cd greeting-generator && ./setup.sh  # Creates venv, installs deps, sets up 2am cron job
 ```
 
 **Monitor execution:**
 ```bash
+cd greeting-generator
 # View today's log
 tail -f data/$(date +%Y-%m-%d)/log_$(date +%Y-%m-%d).txt
 
@@ -108,16 +111,16 @@ tail -f data/$(date +%Y-%m-%d)/log_$(date +%Y-%m-%d).txt
 less data/$(date +%Y-%m-%d)/pipeline_$(date +%Y-%m-%d).txt
 ```
 
-### Playback (FitPC3)
+### Playback (greeting-playback/)
 
 **Deploy to playback server:**
 ```bash
-cd playback && ./deploy_playback.sh
+cd greeting-playback && ./deploy.sh
 ```
 
 **Setup (run once after deployment):**
 ```bash
-cd playback && ./setup_playback.sh  # Creates venv, installs deps, configures systemd + cron with verification
+cd greeting-playback && ./setup.sh  # Creates venv, installs deps, configures systemd + cron with verification
 ```
 
 **Check service status:**
@@ -129,10 +132,10 @@ sudo systemctl restart greeting.service  # If needed
 **Monitor logs:**
 ```bash
 # Flask receiver logs
-tail -f /home/oscar/daily-greeting/data/receiver.log
+tail -f /home/oscar/greeting-playback/data/receiver.log
 
 # Sunrise checker logs (appears after first greeting received)
-tail -f /home/oscar/daily-greeting/data/checker.log
+tail -f /home/oscar/greeting-playback/data/checker.log
 
 # Verify cron is running
 grep CRON /var/log/auth.log | tail -20
@@ -141,18 +144,31 @@ grep CRON /var/log/auth.log | tail -20
 **Verify playback setup:**
 ```bash
 # Check sunrise schedule
-cat /home/oscar/daily-greeting/data/.playback_schedule
-date -d @$(cat /home/oscar/daily-greeting/data/.playback_schedule)
+cat /home/oscar/greeting-playback/data/.playback_schedule
+date -d @$(cat /home/oscar/greeting-playback/data/.playback_schedule)
 
 # Test audio manually
-aplay -Dplug:default /home/oscar/daily-greeting/data/greeting.wav
+aplay -Dplug:default /home/oscar/greeting-playback/data/greeting.wav
+```
+
+### Notifications (notifications/)
+
+**Deploy notification system:**
+```bash
+cd notifications && ./deploy.sh  # Deploys wind chimes and playback script to FitPC3
+```
+
+**Test chime playback:**
+```bash
+# On FitPC3
+python3 /home/oscar/notifications/play_chime.py
 ```
 
 ## Configuration
 
-### Generator Configuration (`config.ini`)
+### Generator Configuration (`greeting-generator/config.ini`)
 
-Copy from `generator_config.ini.example` and customize:
+Copy from `config.ini.example` and customize:
 
 **[weather]**
 - `lat`, `lon` - Coordinates for weather.gov API
@@ -161,7 +177,7 @@ Copy from `generator_config.ini.example` and customize:
 **[ollama]**
 - `base_url` - Ollama server URL
 - `model` - Text model (e.g., `mistral:7b`)
-- `image_model` - Vision model (e.g., `gemma3:4b`)
+- `image_model` - Vision model (e.g., `llama3.2-vision:11b`)
 
 **[navidrome]**
 - `base_url`, `username`, `password`, `client_name` - Subsonic API credentials
@@ -174,18 +190,14 @@ Copy from `generator_config.ini.example` and customize:
 - `mean_length`, `q1_length`, `min_length` - Greeting length parameters (lognormal distribution)
 
 **[tts]**
-- `model_path` - Path to Piper TTS .onnx model
 - `length_scale` - Speech speed multiplier (>1 slower, <1 faster)
 
-**[io]**
-- `base_dir` - Output directory for pipeline artifacts
-
 **[playback]**
-- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000`)
+- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000/greeting`)
 
-### Playback Configuration (`playback/playback_config.ini`)
+### Playback Configuration (`greeting-playback/config.ini`)
 
-Copy from `playback/playback_config.ini.example` and customize:
+Copy from `config.ini.example` and customize:
 
 **[server]**
 - `port` - Flask API port (default: 7000)
@@ -201,63 +213,82 @@ Copy from `playback/playback_config.ini.example` and customize:
 ### Project Structure
 
 ```
-├── main.py                              # Main pipeline entry point
-├── config.ini                           # Generator configuration (gitignored)
-├── generator_config.ini.example         # Generator config template
-├── requirements.txt                     # Python dependencies (requests, piper-tts)
-├── setup_generator.sh                   # Generator setup script
-├── deploy_generator.sh                  # Deploy generator to server
+├── greeting-generator/                  # Generation server components
+│   ├── main.py                          # Main pipeline entry point
+│   ├── config.ini                       # Generator configuration (gitignored)
+│   ├── config.ini.example               # Generator config template
+│   ├── requirements.txt                 # Python dependencies (requests, piper-tts)
+│   ├── setup.sh                         # Generator setup script
+│   ├── deploy.sh                        # Deploy generator to server
+│   │
+│   ├── generator/                       # Core pipeline modules
+│   │   ├── __init__.py
+│   │   ├── config.py                    # Configuration loading and application
+│   │   ├── data_sources.py              # External API calls (weather, literature, music)
+│   │   ├── formatters.py                # Data formatting for LLM consumption
+│   │   ├── llm.py                       # Ollama API interface
+│   │   ├── pipeline.py                  # Multi-stage pipeline logic
+│   │   ├── io_manager.py                # File I/O and logging setup
+│   │   └── tts.py                       # Piper TTS synthesis + playback delivery
+│   │
+│   ├── tests/                           # Test files
+│   │   ├── test_llm.py
+│   │   ├── test_tts.py
+│   │   └── test_send.py
+│   │
+│   ├── data/                            # Pipeline output (gitignored)
+│   │   └── YYYY-MM-DD/                  # Dated run directories
+│   │       ├── pipeline_YYYY-MM-DD.txt  # LLM prompts and responses
+│   │       ├── log_YYYY-MM-DD.txt       # Execution log
+│   │       ├── data_YYYY-MM-DD.json     # Structured data from all stages
+│   │       ├── greeting_YYYY-MM-DD.txt  # Final greeting text
+│   │       ├── greeting_YYYY-MM-DD.wav  # Synthesized audio
+│   │       └── coverart_YYYY-MM-DD.jpg  # Album cover (if analyzed)
+│   │
+│   └── models/                          # TTS models (gitignored, deployed separately)
+│       ├── en_US-ryan-high.onnx
+│       ├── en_US-ryan-high.onnx.json
+│       ├── en_US-lessac-high.onnx
+│       ├── en_US-lessac-high.onnx.json
+│       └── [other voice models...]
 │
-├── generator/                           # Core pipeline modules
-│   ├── __init__.py
-│   ├── config.py                        # Configuration loading and application
-│   ├── data_sources.py                  # External API calls (weather, literature, music)
-│   ├── formatters.py                    # Data formatting for LLM consumption
-│   ├── llm.py                           # Ollama API interface
-│   ├── pipeline.py                      # Multi-stage pipeline logic
-│   ├── io_manager.py                    # File I/O and logging setup
-│   └── tts.py                           # Piper TTS synthesis + playback delivery
-│
-├── playback/                            # Playback server components (FitPC3)
+├── greeting-playback/                   # Playback server components (FitPC3)
 │   ├── receive_greeting.py              # Flask API for receiving audio
 │   ├── check_sunrise.sh                 # Sunrise checker script (cron every 5 min)
 │   ├── greeting.service                 # Systemd service template for Flask
-│   ├── playback_config.ini.example      # Playback config template
+│   ├── config.ini                       # Playback config (gitignored)
+│   ├── config.ini.example               # Playback config template
 │   ├── requirements.txt                 # Python dependencies (flask, astral)
-│   ├── setup_playback.sh                # Playback setup script
-│   └── deploy_playback.sh               # Deploy playback to server
+│   ├── setup.sh                         # Playback setup script
+│   ├── deploy.sh                        # Deploy playback to server
+│   │
+│   └── data/                            # Playback data (gitignored)
+│       ├── greeting.wav                 # Current greeting audio
+│       ├── .playback_schedule           # Sunrise epoch timestamp
+│       ├── receiver.log                 # Flask receiver logs
+│       └── checker.log                  # Sunrise checker logs
 │
-├── tests/                               # Test files
-│   ├── test_llm.py
-│   └── test_tts.py
+├── notifications/                       # Shared notification system
+│   ├── play_chime.py                    # Random chime playback script
+│   ├── deploy.sh                        # Deploy notifications to FitPC3
+│   └── resources/
+│       └── 38888__iainmccurdy__wind-chimes/
+│           ├── [6 wind chime WAV files]
+│           └── _readme_and_license.txt
 │
-├── data/                                # Pipeline output (gitignored)
-│   └── YYYY-MM-DD/                      # Dated run directories
-│       ├── pipeline_YYYY-MM-DD.txt      # LLM prompts and responses
-│       ├── log_YYYY-MM-DD.txt           # Execution log
-│       ├── data_YYYY-MM-DD.json         # Structured data from all stages
-│       ├── greeting_YYYY-MM-DD.txt      # Final greeting text
-│       ├── greeting_YYYY-MM-DD.wav      # Synthesized audio
-│       └── coverart_YYYY-MM-DD.jpg      # Album cover (if analyzed)
-│
-└── models/                              # TTS models (downloaded by setup)
-    ├── en_US-ryan-high.onnx
-    ├── en_US-ryan-high.onnx.json
-    ├── en_US-lessac-high.onnx
-    └── en_US-lessac-high.onnx.json
+└── CLAUDE.md                            # Project documentation (this file)
 ```
 
-### Main Pipeline Flow (`main.py`)
+### Main Pipeline Flow (`greeting-generator/main.py`)
 
 1. **Initialize** - Load config, create IOManager, setup logging
 2. **Stage 1: Weather** - Fetch from weather.gov API
 3. **Stage 2: Literature** - Validate random excerpt (max 5 attempts)
 4. **Stage 3: Album Selection** - Choose 1 from 5 random albums
 5. **Stage 4: Album Art** - Analyze cover art with vision model
-6. **Stage 5: Synthesis** - Extract themes/mood/sensory elements
-7. **Stage 6: Composition** - Transform to wake-up message
-8. **Stage 7: TTS Synthesis** - Generate audio with Piper TTS
-9. **Stage 8: Delivery** - Send audio to playback server (if configured)
+6. **Stage 5: Synthesis** - Compose greeting directly from inputs (merged synthesis+composition)
+7. **Stage 6: TTS Synthesis** - Generate audio with random Piper TTS voice model
+8. **Stage 7: Delivery** - Send audio to playback server with retry logic
 
 ### Key Modules
 
@@ -281,8 +312,7 @@ Copy from `playback/playback_config.ini.example` and customize:
 - `validate_literature(io_manager, max_attempts)` - Retry logic for suitable excerpts
 - `select_album(io_manager, formatted_lit)` - LLM-based album selection with regex parsing
 - `analyze_album_art(io_manager, album)` - Default check + vision analysis
-- `synthesize_materials(...)` - Extract abstract themes/mood
-- `compose_greeting(...)` - Final composition (TODO)
+- `synthesize_materials(...)` - Merged synthesis+composition, directly produces greeting
 
 **`generator/io_manager.py`** - File Operations
 - Context manager for pipeline file lifecycle
@@ -291,23 +321,30 @@ Copy from `playback/playback_config.ini.example` and customize:
 - `print_section(title, content)` - Formatted headers for pipeline trace
 
 **`generator/tts.py`** - TTS Synthesis and Delivery
-- `synthesize_greeting(text, output_path, model_path)` - Piper TTS audio generation
-- `send_to_playback_server(audio_path, server_url)` - HTTP POST audio to playback server
+- `synthesize_greeting(text, io_manager)` - Piper TTS audio generation with random voice selection
+- `send_to_playback_server(audio_path, max_retries)` - HTTP POST audio to playback server with retry logic
 
 **`generator/config.py`** - Configuration Management
-- `load_config(config_path)` - Load INI configuration file
+- `load_config(base_dir)` - Load INI configuration file from base directory
 - `apply_config(config)` - Apply config overrides to module constants
 
-**`playback/receive_greeting.py`** - Flask Receiver
-- `/receive` endpoint - Accept WAV file, calculate tomorrow's sunrise, save schedule
+**`greeting-playback/receive_greeting.py`** - Flask Receiver
+- `/greeting` endpoint - Accept WAV file, calculate today/tomorrow's sunrise, save schedule
 - Saves to `data/greeting.wav` (overwrites previous)
-- Calculates sunrise epoch time and saves to `data/.playback_schedule`
+- Calculates sunrise epoch time with offset and saves to `data/.playback_schedule`
+- Handles wraparound if sunrise has already passed (schedules for tomorrow)
 
-**`playback/greeting_playback.sh`** - Sunrise Checker
+**`greeting-playback/check_sunrise.sh`** - Sunrise Checker
 - Runs every 5 minutes via cron
 - Reads sunrise time from `data/.playback_schedule`
-- Plays greeting with `aplay` if past sunrise time
-- Updates schedule after playback to prevent replays
+- Plays random chime, then greeting with `aplay` if past sunrise time
+- Plays another chime after greeting completes
+- Updates schedule after playback to prevent replays (adds 24 hours)
+
+**`notifications/play_chime.py`** - Notification System
+- Selects random wind chime from collection (6 variations)
+- Plays with `aplay` with 10-second duration limit
+- Shared between greeting system and future notification features
 
 ## Development Roadmap
 
