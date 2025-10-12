@@ -70,7 +70,7 @@ log "INFO: Greeting playback completed"
 if [ -f "$SONG_URLS_FILE" ]; then
     log "INFO: Starting album playback"
 
-    # Read song URLs and play with mpv
+    # Read song URLs and play with mpv (mpv-mpris auto-loads for MPRIS support)
     mpv --no-video --playlist="$SONG_URLS_FILE" >> "$LOG_FILE" 2>&1
 
     log "INFO: Album playback completed"

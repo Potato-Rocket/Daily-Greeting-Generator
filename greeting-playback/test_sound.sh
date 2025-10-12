@@ -7,6 +7,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
+SONG_URLS_FILE="$SCRIPT_DIR/data/song_urls.txt"
 
 NOTIFICATION_PATH="/home/oscar/notifications/play_chime.py"
 
@@ -24,3 +25,5 @@ log "INFO: Playback completed successfully"
 # Play another chime after the greeting is complete
 /usr/bin/env python3 "$NOTIFICATION_PATH"
 
+# Start playing the selected album
+mpv --no-video --playlist="$SONG_URLS_FILE"

@@ -6,6 +6,7 @@ set -e
 
 # Determine script directory for relative paths
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+TRIGGERS_DIR="/etc/triggerhappy/triggers.d"
 
 echo "Setting up Daily Greeting playback server..."
 echo "Base directory: $BASE_DIR"
@@ -19,7 +20,7 @@ if [ ! -f "$BASE_DIR/config.ini" ]; then
     echo "Creating config.ini from template..."
     cp "$BASE_DIR/config.ini.example" "$BASE_DIR/config.ini"
     echo ""
-    echo "IMPORTANT: Edit $BASE_DIR/playback_config.ini with your settings:"
+    echo "IMPORTANT: Edit $BASE_DIR/config.ini with your settings:"
     echo "   - Location coordinates (lat/lon)"
     echo "   - Sunrise offset in minutes"
     echo ""
@@ -85,10 +86,21 @@ else
 fi
 
 echo ""
+echo "Setting up triggerhappy trigger for mpv"
+# Set up triggerhappy to control 
+if [ ! -f "$TRIGGERS_DIR/mpv.conf" ]; then
+    sudo mkdir -p "$TRIGGERS_DIR"
+    sudo cp "$BASE_DIR/mpv.conf" "$TRIGGERS_DIR/"
+    sudo systemctl restart triggerhappy
+else
+    echo "Triggers for mpv MPRIS commands already exist"
+fi
+
+echo ""
 echo "Setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Edit $BASE_DIR/playback_config.ini with your coordinates and offset"
+echo "1. Edit $BASE_DIR/config.ini with your coordinates and offset"
 echo "2. Test Flask API: curl -X POST http://localhost:7000/receive -d @test.wav -H 'Content-Type: audio/wav'"
 echo "3. Send test greeting from generation server"
 echo "4. Monitor logs:"

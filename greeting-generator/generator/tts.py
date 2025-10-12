@@ -111,7 +111,7 @@ def send_to_playback_server(audio_path, album, max_retries=5):
                 )
 
             if response.status_code == 200:
-                logging.info("Audio sent successfully to playback server")
+                logging.info("Audio and songs sent successfully to playback server")
                 return True
             else:
                 logging.error(f"Playback server returned status {response.status_code}: {response.text}")

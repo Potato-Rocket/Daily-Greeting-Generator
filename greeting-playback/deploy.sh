@@ -18,6 +18,7 @@ scp check_sunrise.sh \
     receive_greeting.py \
     requirements.txt \
     setup.sh \
+    mpv.conf \
     greeting.service \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"
@@ -27,5 +28,5 @@ echo ""
 echo "Next steps:"
 echo "1. SSH to server: ssh $SERVER"
 echo "2. cd $REMOTE_PATH"
-echo "3. Run setup (first time only): ./setup_playback.sh"
-echo "4. Edit config: vim playback_config.ini"
+echo "3. Run setup (first time only): ./setup.sh"
+echo "4. Edit config: vim config.ini"
