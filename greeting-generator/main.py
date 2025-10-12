@@ -42,62 +42,62 @@ def main():
     config = load_config(base_dir)
     apply_config(config)
 
-    # Initialize I/O manager and full logging
-    io_manager = IOManager(base_dir)
-    setup_logging(io_manager)
+    # Initialize I/O manager with context manager to ensure pipeline file is opened/closed
+    with IOManager(base_dir) as io_manager:
+        setup_logging(io_manager)
 
-    logging.info("=== PIPELINE START ===")
+        logging.info("=== PIPELINE START ===")
 
-    try:
-        # Stage 1: Weather data
-        logging.info("Stage 1: Weather data")
-        weather = get_weather_data()
-        logging.debug(f"Weather data: {json.dumps(weather, indent=2)}")
-        io_manager.update_data_file(weather=weather)
+        try:
+            # Stage 1: Weather data
+            logging.info("Stage 1: Weather data")
+            weather = get_weather_data()
+            logging.debug(f"Weather data: {json.dumps(weather, indent=2)}")
+            io_manager.update_data_file(weather=weather)
 
-        # Stage 2: Literature validation
-        logging.info("Stage 2: Literature validation")
-        literature = validate_literature(io_manager, max_attempts=5)
-        if not literature:
-            logging.error("Pipeline aborted: No suitable literature found")
-            return
-        io_manager.update_data_file(literature=literature)
+            # Stage 2: Literature validation
+            logging.info("Stage 2: Literature validation")
+            literature = validate_literature(io_manager, max_attempts=5)
+            if not literature:
+                logging.error("Pipeline aborted: No suitable literature found")
+                return
+            io_manager.update_data_file(literature=literature)
 
-        # Stage 3: Album selection
-        logging.info("Stage 3: Album selection")
-        album = select_album(io_manager, literature)
+            # Stage 3: Album selection
+            logging.info("Stage 3: Album selection")
+            album = select_album(io_manager, literature)
 
-        # Stage 4: Album art analysis
-        logging.info("Stage 4: Album art analysis")
-        analyze_album_art(io_manager, album)
-        io_manager.update_data_file(album=album)
+            # Stage 4: Album art analysis
+            logging.info("Stage 4: Album art analysis")
+            analyze_album_art(io_manager, album)
+            io_manager.update_data_file(album=album)
 
-        # Stage 5: Synthesis layer
-        logging.info("Stage 5: Synthesis")
-        greeting = synthesize_materials(io_manager, weather, literature, album)
-        
-        io_manager.save_greeting(greeting)
-        io_manager.update_data_file(greeting=greeting)
-        logging.info("Greeting generated and saved")
+            # Stage 5: Synthesis layer
+            logging.info("Stage 5: Synthesis")
+            greeting = synthesize_materials(io_manager, weather, literature, album)
 
-        # Stage 6: TTS synthesis
-        logging.info("Stage 6: TTS synthesis")
-        result = synthesize_greeting(greeting, io_manager)
+            io_manager.save_greeting(greeting)
+            io_manager.update_data_file(greeting=greeting)
+            logging.info("Greeting generated and saved")
 
-        if result:
-            logging.info("Audio saved successfully")
+            # Stage 6: TTS synthesis
+            logging.info("Stage 6: TTS synthesis")
+            result = synthesize_greeting(greeting, io_manager)
 
-            logging.info("Stage 7: Sending to playback server")
-            send_success = send_to_playback_server(result)
+            if result:
+                logging.info("Audio saved successfully")
 
-            if not send_success:
-                logging.warning("Failed to send audio to playback server")
+                logging.info("Stage 7: Sending to playback server")
+                send_success = send_to_playback_server(result)
 
-        logging.info("=== PIPELINE COMPLETE ===")
+                if not send_success:
+                    logging.warning("Failed to send audio to playback server")
 
-    except Exception as e:
-        logging.exception(f"Pipeline error: {e}")
-        raise
+            logging.info("=== PIPELINE COMPLETE ===")
+
+        except Exception as e:
+            logging.exception(f"Pipeline error: {e}")
+            raise
 
 
 if __name__ == "__main__":

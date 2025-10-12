@@ -21,7 +21,7 @@ scp main.py \
     "$SERVER:$REMOTE_PATH/"
 
 echo "Copying TTS models..."
-scp -r models "$SERVER:$REMOTE_PATH"
+scp -r models tests "$SERVER:$REMOTE_PATH"
 
 echo "Copying generator module..."
 # Create temporary directory without __pycache__

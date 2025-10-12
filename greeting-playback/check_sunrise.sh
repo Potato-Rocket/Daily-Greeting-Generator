@@ -7,7 +7,6 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SCHEDULE_FILE="$SCRIPT_DIR/data/.playback_schedule"
-CHIME_FILE="$SCRIPT_DIR/resources/chime.wav"
 GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
 LOG_FILE="$SCRIPT_DIR/data/checker.log"
 
@@ -59,15 +58,15 @@ amixer set Master 100% >> "$LOG_FILE" 2>&1
 /usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1
 
 # Play greeting with aplay (use plug device for automatic channel conversion)
-if aplay -Dplug:default "$GREETING_FILE" >> "$LOG_FILE" 2>&1; then
-    log "INFO: Playback completed successfully"
-    # Mark as played by adding 1 day (86400 seconds) to sunrise time
-    NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
-    echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
-else
-    log "ERROR: Playback failed"
-    exit 1
-fi
+aplay "$GREETING_FILE" >> "$LOG_FILE" 2>&1;
 
 # Play another chime after the greeting is complete
 /usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1
+
+log "INFO: Playback completed successfully"
+
+# Mark as played by adding 1 day (86400 seconds) to sunrise time
+NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
+echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
+
+log "INFO: Next playbacl time scheduled"
