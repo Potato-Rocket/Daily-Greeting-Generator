@@ -375,15 +375,22 @@ Copy from `config.ini.example` and customize:
 - [x] Add audio volume control and mono-to-stereo conversion
 - [x] Switch to append mode for logs (preserve multi-run history)
 
-### Phase 5: Refinement (In Progress)
+### Phase 5: Album Playback ✅
+- [x] Implement album streaming URL generation via Subsonic API
+- [x] Update Flask endpoint to receive and store song URLs
+- [x] Add mpv album playback after greeting finishes
+- [x] Configure mpv-mpris for MPRIS D-Bus interface
+- [x] Set up triggerhappy remote control integration
+- [x] Configure triggerhappy to run as oscar with D-Bus session access
+
+### Phase 6: Refinement (In Progress)
 - [ ] Fix Ollama GPU utilization (currently not using GTX 1650)
 - [ ] Fix media-center timezone (currently UTC, should be America/New_York for 2am local time)
-- [ ] Add mpv album playback after greeting finishes
 - [ ] Set up general-purpose Navidrome/mpv music endpoint on playback server
 - [ ] Fine-tune composition prompts based on greeting quality
 - [ ] Improve album selection prompt clarity
 
-### Phase 6: Monitoring & Reliability (Future)
+### Phase 7: Monitoring & Reliability (Future)
 - [ ] Add health monitoring (UptimeRobot, Healthchecks.io, or Telegram bot)
 - [ ] Alert on pipeline failures or missed runs
 - [ ] Build Raspberry Pi e-ink status dashboard (optional, for fun)

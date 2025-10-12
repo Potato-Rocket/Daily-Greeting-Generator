@@ -15,6 +15,7 @@ ssh "$SERVER" "mkdir -p $REMOTE_PATH"
 # Copy files using scp
 echo "Copying files..."
 scp check_sunrise.sh \
+    test_sound.sh \
     receive_greeting.py \
     requirements.txt \
     setup.sh \

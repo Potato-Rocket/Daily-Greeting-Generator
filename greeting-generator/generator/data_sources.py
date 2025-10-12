@@ -15,9 +15,6 @@ import re
 import logging
 import time
 
-import json
-
-
 # Weather.gov API configuration
 LAT = 42.27
 LON = -71.81
