@@ -88,7 +88,7 @@ def main():
                 logging.info("Audio saved successfully")
 
                 logging.info("Stage 7: Sending to playback server")
-                send_success = send_to_playback_server(result)
+                send_success = send_to_playback_server(result, album)
 
                 if not send_success:
                     logging.warning("Failed to send audio to playback server")

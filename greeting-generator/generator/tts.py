@@ -66,14 +66,14 @@ def synthesize_greeting(text, io_manager):
         return None
 
 
-def send_to_playback_server(audio_path, max_retries=5):
+def send_to_playback_server(audio_path, album, max_retries=5):
     """
-    Send audio file to playback server via HTTP POST with retry logic.
+    Send audio file and album song URLs to playback server via HTTP POST with retry logic.
 
     Args:
         audio_path: Path to WAV file to send
-        album_id: The chosen album's Navidrome id
-        max_retries: Maximum number of retry attempts (default: 3)
+        album: Album dict containing 'songs' list with 'url' keys
+        max_retries: Maximum number of retry attempts (default: 5)
 
     Returns:
         bool: True if successfully sent, False on failure after all retries
@@ -83,6 +83,9 @@ def send_to_playback_server(audio_path, max_retries=5):
         logging.error(f"Audio file not found: {audio_path}")
         return False
 
+    # Extract song URLs from album
+    song_urls = [song['url'] for song in album.get('songs', [])]
+    logging.info(f"Preparing to send greeting + {len(song_urls)} song URLs to playback server")
 
     for attempt in range(1, max_retries + 1):
         try:
@@ -94,12 +97,16 @@ def send_to_playback_server(audio_path, max_retries=5):
 
             endpoint = f"{SERVER_ADDR}/greeting"
 
-            logging.info(f"Sending audio to playback server: {endpoint}")
+            logging.info(f"Sending audio + song URLs to playback server: {endpoint}")
 
             with open(audio_path, 'rb') as f:
+                # Send audio file and song URLs as multipart form data
+                files = {'audio': f}
+                data = {'song_urls': '\n'.join(song_urls)}
                 response = requests.post(
                     endpoint,
-                    data=f,
+                    files=files,
+                    data=data,
                     timeout=30
                 )
 

@@ -15,6 +15,8 @@ import re
 import logging
 import time
 
+import json
+
 
 # Weather.gov API configuration
 LAT = 42.27
@@ -298,7 +300,17 @@ def get_album_details(album_id):
             return None
 
         album = response.json()['subsonic-response']['album']
-        songs = [song['title'] for song in album['song']]
+
+        # Build list of songs with streaming URLs
+        songs = []
+        for song in album['song']:
+            song_id = song['id']
+            stream_url = f"{NAVIDROME_BASE}/rest/stream.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&id={song_id}"
+            songs.append({
+                'title': song['title'],
+                'url': stream_url
+            })
+
         logging.debug(f"Album has {len(songs)} tracks")
 
         # Fetch cover art if available

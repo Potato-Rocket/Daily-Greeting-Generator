@@ -79,7 +79,7 @@ def format_album(album_data):
 
     song_lines = []
     for index, song in enumerate(album_data['songs']):
-        song_lines.append(f"{index + 1}. {song}")
+        song_lines.append(f"{index + 1}. {song['title']}")
 
     string = f"""SELECTED ALBUM: \"{album_data['name']}\" by {album_data['artist']} ({album_data['year']})
 Genres: {genres}

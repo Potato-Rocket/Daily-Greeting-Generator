@@ -11,6 +11,7 @@ Usage:
 
 import sys
 import logging
+import json
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -52,8 +53,22 @@ def main():
         logging.info(f"Found audio file: {audio_path}")
         logging.info(f"File size: {audio_path.stat().st_size} bytes")
 
+        # Load album data from today's data file
+        data_path = io_manager.data_dir / f"data_{io_manager.date_str}.json"
+        if not data_path.exists():
+            logging.error(f"Audio delivery test aborted: Data file not found at {data_path}")
+            logging.info("Run the full pipeline first to generate data")
+            return
+
+        with open(data_path, 'r') as f:
+            data = json.load(f)
+            album = data.get('album', {})
+
+        logging.info(f"Loaded album data: {album.get('name')} by {album.get('artist')}")
+        logging.info(f"Album has {len(album.get('songs', []))} songs")
+
         # Send to playback server
-        send_to_playback_server(audio_path)
+        send_to_playback_server(audio_path, album)
 
         logging.info("=== AUDIO DELIVERY TEST COMPLETE ===")
 
