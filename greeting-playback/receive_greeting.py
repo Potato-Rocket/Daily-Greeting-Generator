@@ -19,7 +19,7 @@ from astral.sun import sun
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 GREETING_FILE = DATA_DIR / "greeting.wav"
-ALBUM_FILE = "album_id.txt"
+SONG_URLS_FILE = DATA_DIR / "song_urls.txt"
 LOG_FILE = DATA_DIR / "receiver.log"
 CONFIG_FILE = BASE_DIR / "config.ini"
 SCHEDULE_FILE = DATA_DIR / ".playback_schedule"
@@ -139,32 +139,43 @@ def get_sunrise_time(config):
 @app.route('/greeting', methods=['POST'])
 def receive_greeting():
     """
-    Receive greeting audio file from generation server.
+    Receive greeting audio file and song URLs from generation server.
 
-    Saves to data/greeting.wav (overwrites previous)
+    Saves audio to data/greeting.wav (overwrites previous)
+    Saves song URLs to data/song_urls.txt (overwrites previous)
     Calculates and saves tomorrow's sunrise time
 
     Returns:
         JSON response with status
     """
     try:
-        # Get audio data
-        audio_data = request.data
-        if not audio_data:
-            app.logger.warning("Empty request body")
-            return jsonify({
-                'status': 'error',
-                'message': 'No audio data received'
-            }), 400
-
         # Ensure directory exists
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Save audio file (overwrites previous)
-        with open(GREETING_FILE, 'wb') as f:
-            f.write(audio_data)
+        # Get audio file from multipart form
+        if 'audio' not in request.files:
+            app.logger.warning("No audio file in request")
+            return jsonify({
+                'status': 'error',
+                'message': 'No audio file received'
+            }), 400
 
-        app.logger.info("Greeting received and saved")
+        audio_file = request.files['audio']
+
+        # Save audio file (overwrites previous)
+        audio_file.save(GREETING_FILE)
+        app.logger.info("Greeting audio received and saved")
+
+        # Get and save song URLs if provided
+        song_urls = request.form.get('song_urls', '')
+        if song_urls:
+            with open(SONG_URLS_FILE, 'w') as f:
+                f.write(song_urls)
+
+            num_songs = len(song_urls.strip().split('\n'))
+            app.logger.info(f"Saved {num_songs} song URLs")
+        else:
+            app.logger.warning("No song URLs provided")
 
         # Calculate sunrise time and save schedule
         config = load_config()

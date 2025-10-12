@@ -8,6 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SCHEDULE_FILE="$SCRIPT_DIR/data/.playback_schedule"
 GREETING_FILE="$SCRIPT_DIR/data/greeting.wav"
+SONG_URLS_FILE="$SCRIPT_DIR/data/song_urls.txt"
 LOG_FILE="$SCRIPT_DIR/data/checker.log"
 
 NOTIFICATION_PATH="/home/oscar/notifications/play_chime.py"
@@ -63,10 +64,22 @@ aplay "$GREETING_FILE" >> "$LOG_FILE" 2>&1;
 # Play another chime after the greeting is complete
 /usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1
 
-log "INFO: Playback completed successfully"
+log "INFO: Greeting playback completed"
+
+# Play album if song URLs exist
+if [ -f "$SONG_URLS_FILE" ]; then
+    log "INFO: Starting album playback"
+
+    # Read song URLs and play with mpv
+    mpv --no-video --playlist="$SONG_URLS_FILE" >> "$LOG_FILE" 2>&1
+
+    log "INFO: Album playback completed"
+else
+    log "WARNING: No song URLs file found, skipping album playback"
+fi
 
 # Mark as played by adding 1 day (86400 seconds) to sunrise time
 NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
 echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
 
-log "INFO: Next playbacl time scheduled"
+log "INFO: Next playback time scheduled"
