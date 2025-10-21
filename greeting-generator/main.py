@@ -27,6 +27,7 @@ from generator.pipeline import (
     analyze_album_art,
     synthesize_materials
 )
+from generator.llm import unload_all_models
 from generator.tts import synthesize_greeting, send_to_playback_server
 
 
@@ -93,6 +94,8 @@ def main():
                 if not send_success:
                     logging.warning("Failed to send audio to playback server")
 
+            # Clean up Ollama
+            unload_all_models()
             logging.info("=== PIPELINE COMPLETE ===")
 
         except Exception as e:
