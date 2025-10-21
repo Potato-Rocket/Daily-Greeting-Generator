@@ -43,6 +43,12 @@ fi
 
 log "INFO: Past sunrise time, playing greeting"
 
+# Mark as played by adding 1 day (86400 seconds) to sunrise time
+NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
+echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
+
+log "INFO: Next playback time scheduled"
+
 # Check if greeting file exists
 if [ ! -f "$GREETING_FILE" ]; then
     log "ERROR: No greeting file found"
@@ -52,8 +58,10 @@ fi
 log "INFO: Playing greeting"
 
 # Ensure audio is unmuted and at 100% volume
-amixer set Master unmute >> "$LOG_FILE" 2>&1
-amixer set Master 100% >> "$LOG_FILE" 2>&1
+amixer sset Headphone unmute >> "$LOG_FILE" 2>&1
+amixer sset Headphone 100% >> "$LOG_FILE" 2>&1
+playerctl --all-players stop >> "$LOG_FILE" 2>&1
+mpc stop >> "$LOG_FILE" 2>&1
 
 # Play chime sound first, chop off trailing silence
 /usr/bin/env python3 "$NOTIFICATION_PATH" >> "$LOG_FILE" 2>&1
@@ -70,16 +78,14 @@ log "INFO: Greeting playback completed"
 if [ -f "$SONG_URLS_FILE" ]; then
     log "INFO: Starting album playback"
 
-    # Read song URLs and play with mpv (mpv-mpris auto-loads for MPRIS support)
-    mpv --no-video --playlist="$SONG_URLS_FILE" >> "$LOG_FILE" 2>&1
+    # Run mpv in a D-Bus session for MPRIS/triggerhappy controlmpc clear
+    mpc clear
+    cat "$SONG_URLS_FILE" | while read url; do
+        mpc add "$url"
+    done
+    mpc play >> "$LOG_FILE" 2>&1
 
-    log "INFO: Album playback completed"
+    log "INFO: Album playback initiated"
 else
     log "WARNING: No song URLs file found, skipping album playback"
 fi
-
-# Mark as played by adding 1 day (86400 seconds) to sunrise time
-NEW_EPOCH=$((SUNRISE_EPOCH + 86400))
-echo "$NEW_EPOCH" > "$SCHEDULE_FILE"
-
-log "INFO: Next playback time scheduled"

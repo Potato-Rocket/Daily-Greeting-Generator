@@ -69,31 +69,20 @@ echo "Setting up cron job for sunrise checker..."
 CRON_LINE="*/5 * * * * $BASE_DIR/check_sunrise.sh"
 
 # Check if cron job already exists
-if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
+if sudo crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
     echo "Cron job already exists, skipping..."
 else
     # Add cron job
-    (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
+    (sudo crontab -l 2>/dev/null; echo "$CRON_LINE") | sudo crontab -
 
     # Verify it was actually added
-    if crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
+    if sudo crontab -l 2>/dev/null | grep -q "check_sunrise.sh"; then
         echo "Cron job added (runs every 5 minutes)"
     else
         echo "ERROR: Failed to add cron job. Please add manually:"
-        echo "  echo '$CRON_LINE' | crontab -"
+        echo "  echo '$CRON_LINE' | sudo crontab -"
         exit 1
     fi
-fi
-
-echo ""
-echo "Setting up triggerhappy trigger for mpv"
-# Set up triggerhappy to control 
-if [ ! -f "$TRIGGERS_DIR/mpv.conf" ]; then
-    sudo mkdir -p "$TRIGGERS_DIR"
-    sudo cp "$BASE_DIR/mpv.conf" "$TRIGGERS_DIR/"
-    sudo systemctl restart triggerhappy
-else
-    echo "Triggers for mpv MPRIS commands already exist"
 fi
 
 echo ""

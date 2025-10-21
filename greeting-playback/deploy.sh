@@ -19,7 +19,6 @@ scp check_sunrise.sh \
     receive_greeting.py \
     requirements.txt \
     setup.sh \
-    mpv.conf \
     greeting.service \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"

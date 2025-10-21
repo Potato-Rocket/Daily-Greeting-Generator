@@ -12,8 +12,8 @@ SONG_URLS_FILE="$SCRIPT_DIR/data/song_urls.txt"
 NOTIFICATION_PATH="/home/oscar/notifications/play_chime.py"
 
 # Ensure audio is unmuted and at 100% volume
-amixer set Master unmute
-amixer set Master 100%
+amixer sset Headphone unmute
+amixer sset Headphone 100%
 
 # Play chime sound first, chop off trailing silence
 /usr/bin/env python3 "$NOTIFICATION_PATH"
@@ -26,4 +26,8 @@ log "INFO: Playback completed successfully"
 /usr/bin/env python3 "$NOTIFICATION_PATH"
 
 # Start playing the selected album
-mpv --no-video --playlist="$SONG_URLS_FILE"
+mpc clear
+cat "$SONG_URLS_FILE" | while read url; do
+    mpc add "$url"
+done
+mpc play
