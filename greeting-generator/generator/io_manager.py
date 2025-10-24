@@ -108,20 +108,14 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         with open(data_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
-    def load_data_file(self, date_str=None):
+    def load_data_file(self):
         """
         Load previously saved data_{date}.json file.
-
-        Args:
-            date_str: Date string (YYYY-MM-DD) to load. If None, uses current date.
 
         Returns:
             dict: Loaded pipeline data with 'weather', 'literature', 'album' keys, or None on failure
         """
-        if date_str is None:
-            date_str = self.date_str
-
-        data_path = self.data_dir / f"data_{date_str}.json"
+        data_path = self.data_dir / f"data_{self.date_str}.json"
 
         if not data_path.exists():
             logging.error(f"Data file not found: {data_path}")
@@ -163,6 +157,37 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         with open(coverart_path, "wb") as f:
             f.write(image_data)
         logging.info(f"Saved cover art to {coverart_path}")
+
+    def save_book(self, text):
+        """
+        Save the selected book to book_{date}.txt file.
+
+        Args:
+            text: Unicode text fetched from prject gutenberg
+        """
+        book_path = self.data_dir / f"book_{self.date_str}.txt"
+
+        with open(book_path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        logging.info(f"Saved book to {book_path}")
+    
+    def load_book(self):
+        """
+        Load the previously saved book_{date}.txt file.
+
+        Returns:
+            str: the content of the book file        
+        """
+        book_path = self.data_dir / f"book_{self.date_str}.txt"
+
+        try:
+            with open(book_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+            logging.info(f"Loaded book from {book_path}")
+            return text
+        except Exception as e:
+            logging.exception(f"Failed to load book: {e}")
+            return None
 
     def close(self):
         """Close the pipeline file handle."""
