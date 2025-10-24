@@ -226,10 +226,11 @@ Copy from `config.ini.example` and customize:
 │   │   ├── config.py                    # Configuration loading and application
 │   │   ├── data_sources.py              # External API calls (weather, literature, music)
 │   │   ├── formatters.py                # Data formatting for LLM consumption
-│   │   ├── llm.py                       # Ollama API interface
+│   │   ├── llm.py                       # Ollama API interface with model unloading
 │   │   ├── pipeline.py                  # Multi-stage pipeline logic
 │   │   ├── io_manager.py                # File I/O and logging setup
-│   │   └── tts.py                       # Piper TTS synthesis + playback delivery
+│   │   ├── tts.py                       # Piper TTS synthesis + playback delivery
+│   │   └── jabberwocky.py               # N-gram Markov chain word generator (experimental)
 │   │
 │   ├── tests/                           # Test files
 │   │   ├── test_llm.py
@@ -307,6 +308,7 @@ Copy from `config.ini.example` and customize:
 **`generator/llm.py`** - Ollama Interface
 - `send_ollama_request(prompt)` - Text generation
 - `send_ollama_image_request(prompt, image_base64)` - Vision model
+- `unload_all_models()` - Free GPU memory after pipeline completion
 
 **`generator/pipeline.py`** - Multi-Stage Pipeline Logic
 - `validate_literature(io_manager, max_attempts)` - Retry logic for suitable excerpts
@@ -322,23 +324,34 @@ Copy from `config.ini.example` and customize:
 
 **`generator/tts.py`** - TTS Synthesis and Delivery
 - `synthesize_greeting(text, io_manager)` - Piper TTS audio generation with random voice selection
-- `send_to_playback_server(audio_path, max_retries)` - HTTP POST audio to playback server with retry logic
+- `send_to_playback_server(audio_path, album, max_retries)` - HTTP POST audio + album streaming URLs to playback server with retry logic
+
+**`generator/jabberwocky.py`** - Phonetic Word Generation (Experimental)
+- `parse_words(book_path)` - Extract and normalize words from text file
+- `build_model(wordlist)` - Create N-gram frequency model (2-character context)
+- `length_distribution(wordlist)` - Compute weighted length distribution
+- `generate_word(model, distribution)` - Generate single pronounceable nonsense word
+- `generate_words(io_manager, count)` - Generate multiple jabberwocky words
+- Status: Not yet integrated into pipeline, requires book storage/retrieval implementation
 
 **`generator/config.py`** - Configuration Management
 - `load_config(base_dir)` - Load INI configuration file from base directory
 - `apply_config(config)` - Apply config overrides to module constants
 
 **`greeting-playback/receive_greeting.py`** - Flask Receiver
-- `/greeting` endpoint - Accept WAV file, calculate today/tomorrow's sunrise, save schedule
-- Saves to `data/greeting.wav` (overwrites previous)
+- `/greeting` endpoint - Accept WAV file + album URLs, calculate today/tomorrow's sunrise, save schedule
+- Saves greeting to `data/greeting.wav` (overwrites previous)
+- Saves album streaming URLs to `data/song_urls.txt` if provided
 - Calculates sunrise epoch time with offset and saves to `data/.playback_schedule`
 - Handles wraparound if sunrise has already passed (schedules for tomorrow)
 
 **`greeting-playback/check_sunrise.sh`** - Sunrise Checker
 - Runs every 5 minutes via cron
 - Reads sunrise time from `data/.playback_schedule`
+- Stops any playing media before playback
 - Plays random chime, then greeting with `aplay` if past sunrise time
 - Plays another chime after greeting completes
+- Queues album in mpc (Music Player Client) if `song_urls.txt` exists
 - Updates schedule after playback to prevent replays (adds 24 hours)
 
 **`notifications/play_chime.py`** - Notification System
@@ -378,19 +391,26 @@ Copy from `config.ini.example` and customize:
 ### Phase 5: Album Playback ✅
 - [x] Implement album streaming URL generation via Subsonic API
 - [x] Update Flask endpoint to receive and store song URLs
-- [x] Add mpv album playback after greeting finishes
-- [x] Configure mpv-mpris for MPRIS D-Bus interface
-- [x] Set up triggerhappy remote control integration
-- [x] Configure triggerhappy to run as oscar with D-Bus session access
+- [x] Switch from mpv to mpc (Music Player Client) for album playback
+- [x] Add explicit Ollama model unloading to free GPU memory after pipeline completion
+- [x] Configure audio controls to stop any playing media before greeting playback
 
-### Phase 6: Refinement (In Progress)
+### Phase 6: Jabberwocky Integration (In Progress)
+- [x] Implement N-gram Markov chain word generator
+- [ ] Add book text storage and retrieval from Gutenberg
+- [ ] Integrate jabberwocky into config system
+- [ ] Add jabberwocky stage to pipeline
+- [ ] Incorporate generated words into synthesis prompt
+- [ ] Implement graceful failure modes for Navidrome/Gutenberg
+
+### Phase 7: System Refinement (Future)
 - [ ] Fix Ollama GPU utilization (currently not using GTX 1650)
 - [ ] Fix media-center timezone (currently UTC, should be America/New_York for 2am local time)
-- [ ] Set up general-purpose Navidrome/mpv music endpoint on playback server
+- [ ] Set up general-purpose Navidrome/mpc music endpoint on playback server
 - [ ] Fine-tune composition prompts based on greeting quality
 - [ ] Improve album selection prompt clarity
 
-### Phase 7: Monitoring & Reliability (Future)
+### Phase 8: Monitoring & Reliability (Future)
 - [ ] Add health monitoring (UptimeRobot, Healthchecks.io, or Telegram bot)
 - [ ] Alert on pipeline failures or missed runs
 - [ ] Build Raspberry Pi e-ink status dashboard (optional, for fun)
