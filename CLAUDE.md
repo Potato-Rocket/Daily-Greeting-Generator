@@ -563,6 +563,10 @@ io_manager.print_section("SYNTHESIS - RESPONSE", synthesis)
 
 ### 6. Error Handling
 
+**Philosophy**: Graceful degradation for optional data sources, hard failure for critical services.
+
+#### Data Source Layer (`data_sources.py`)
+
 **Pattern**: Try/except with `logging.exception()` for all external API calls
 
 ```python
@@ -584,6 +588,59 @@ def get_weather_data():
 - Return `None` on failure (caller handles None checking)
 - Log specific error context in exception message
 - Never silently swallow exceptions
+
+#### Pipeline Layer (`pipeline.py`)
+
+**Pattern**: Check for None returns and handle gracefully based on criticality
+
+```python
+def select_album(io_manager, literature):
+    """..."""
+    albums = get_navidrome_albums(count=5)
+
+    # Graceful degradation: proceed without album data
+    if not albums:
+        logging.warning("Navidrome unavailable, skipping album selection")
+        return None
+
+    # Continue with album selection...
+```
+
+**Criticality Hierarchy**:
+
+| Service | Criticality | Behavior on Failure |
+|---------|-------------|---------------------|
+| **Ollama** | Critical | Abort pipeline immediately (no greeting without LLM) |
+| **Weather** | Semi-critical | Degrade gracefully if possible, warn loudly |
+| **Literature** | Optional | Try multiple times (max 5), continue without if all fail |
+| **Navidrome** | Optional | Skip album selection/analysis, generate greeting with available data |
+
+**Implementation Guidelines**:
+1. **Critical services (Ollama)**: No explicit None checking needed - let exceptions bubble up to `main.py`
+2. **Semi-critical services (Weather)**: Check for None, log error, consider continuing with degraded prompt
+3. **Optional services (Literature, Navidrome)**: Check for None, log warning, adapt prompt to exclude missing data
+4. **Pipeline stages must validate inputs**: Never assume data source succeeded - always check for None before accessing dict keys
+
+**Example - Optional Service Degradation**:
+```python
+# Stage 3: Album selection (optional)
+logging.info("Stage 3: Album selection")
+album = select_album(io_manager, literature)
+
+if not album:
+    logging.warning("Album selection unavailable, proceeding without music data")
+    album = None
+
+# Stage 5: Synthesis adapts to available data
+greeting = synthesize_materials(io_manager, weather, literature, album)
+```
+
+**Synthesis Layer Adaptation**:
+The synthesis stage should build prompts dynamically based on available data:
+- If `literature is None`: Omit literature section from prompt
+- If `album is None`: Omit album section from prompt
+- If both are None but weather exists: Generate weather-only greeting
+- If weather is also None: Log critical error and abort (need at least one data source)
 
 ### 7. File Organization
 

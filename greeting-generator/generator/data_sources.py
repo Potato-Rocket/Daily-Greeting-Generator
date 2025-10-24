@@ -223,7 +223,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
             "title": title,
             "author": author,
             "excerpt": excerpt
-        }
+        }, text
 
     except Exception as e:
         logging.exception(f"Literature fetch error: {e}")

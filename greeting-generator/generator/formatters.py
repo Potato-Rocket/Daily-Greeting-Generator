@@ -12,11 +12,15 @@ def format_weather(weather_data):
     Format weather data into human-readable string.
 
     Args:
-        weather_data: Dict with 'overnight', 'sunrise', 'today' keys
+        weather_data: Dict with 'overnight', 'sunrise', 'today' keys, or None if weather unavailable
 
     Returns:
         str: Formatted weather description with overnight, sunrise, and today forecasts
     """
+    if not weather_data:
+        logging.warning("No weather data provided for formatting")
+        return "WEATHER DATA: Not available"
+
     overnight = f"Overnight: {weather_data['overnight']['description']} {weather_data['overnight']['precipitation']}% chance of precipitation."
 
     sunrise = f"Sunrise (NOW): {weather_data['sunrise']['temperature']}°F, {weather_data['sunrise']['conditions']}, {weather_data['sunrise']['humidity']}% humidity, dewpoint {weather_data['sunrise']['dewpoint']:.2f}°C, wind {weather_data['sunrise']['windSpeed']} from {weather_data['sunrise']['windDirection']}, {weather_data['sunrise']['precipitation']}% chance of precipitation."
@@ -31,11 +35,15 @@ def format_literature(literature_data):
     Format literature data into a human-readable string.
 
     Args:
-        literature_data: Dict with 'title', 'author', 'excerpt' keys
+        literature_data: Dict with 'title', 'author', 'excerpt' keys, or None if literature unavailable
 
     Returns:
         str: Formatted literature excerpt with title and author info
     """
+    if not literature_data:
+        logging.warning("No literature data provided for formatting")
+        return "LITERATURE EXCERPT: Not available"
+
     author_info = literature_data['author']['name']
     if literature_data['author']['birth_year'] and literature_data['author']['death_year']:
         author_info += f" ({literature_data['author']['birth_year']}-{literature_data['author']['death_year']})"

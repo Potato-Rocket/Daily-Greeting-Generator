@@ -53,6 +53,10 @@ def main():
             # Stage 1: Weather data
             logging.info("Stage 1: Weather data")
             weather = get_weather_data()
+
+            if not weather:
+                logging.warning("Weather data unavailable, proceeding with degraded greeting")
+
             logging.debug(f"Weather data: {json.dumps(weather, indent=2)}")
             io_manager.update_data_file(weather=weather)
 
@@ -60,13 +64,15 @@ def main():
             logging.info("Stage 2: Literature validation")
             literature = validate_literature(io_manager, max_attempts=5)
             if not literature:
-                logging.error("Pipeline aborted: No suitable literature found")
-                return
+                logging.warning("Literature unavailable after 5 attempts, proceeding without literary data")
             io_manager.update_data_file(literature=literature)
 
             # Stage 3: Album selection
             logging.info("Stage 3: Album selection")
             album = select_album(io_manager, literature)
+
+            if not album:
+                logging.warning("Album selection unavailable, proceeding without music data")
 
             # Stage 4: Album art analysis
             logging.info("Stage 4: Album art analysis")
@@ -76,6 +82,10 @@ def main():
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
             greeting = synthesize_materials(io_manager, weather, literature, album)
+
+            if not greeting:
+                logging.error("Pipeline aborted: Synthesis failed (Ollama unavailable)")
+                return
 
             io_manager.save_greeting(greeting)
             io_manager.update_data_file(greeting=greeting)
@@ -93,6 +103,8 @@ def main():
 
                 if not send_success:
                     logging.warning("Failed to send audio to playback server")
+            else:
+                logging.error("TTS synthesis failed, greeting text saved but no audio generated")
 
             # Clean up Ollama
             unload_all_models()

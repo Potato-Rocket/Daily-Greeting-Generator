@@ -18,6 +18,7 @@ import logging
 from .data_sources import get_random_literature, get_navidrome_albums, get_album_details
 from .formatters import format_literature, format_albums, format_album, format_weather
 from .llm import send_ollama_request, send_ollama_image_request
+from .jabberwocky import generate_words
 
 MESSAGE_MEAN_LEN = 140
 MESSAGE_Q1_LEN = 100
@@ -39,7 +40,7 @@ def validate_literature(io_manager, max_attempts=5):
 
     for attempt in range(1, max_attempts + 1):
         logging.debug(f"Literature validation attempt {attempt}/{max_attempts}")
-        literature = get_random_literature()
+        literature, text = get_random_literature()
 
         if not literature:
             logging.warning(f"Literature fetch failed on attempt {attempt}, retrying")
@@ -56,10 +57,16 @@ VERDICT: YES if suitable NO if not"""
 
         io_manager.print_section("LITERATURE VALIDATION - PROMPT", literature_prompt)
         evaluation = send_ollama_request(literature_prompt)
+
+        if evaluation is None:
+            logging.error("Ollama request failed during literature validation")
+            return None
+
         io_manager.print_section("LITERATURE VALIDATION - RESPONSE", evaluation)
 
         if "VERDICT: YES" in evaluation.upper():
             logging.info(f"Suitable literature found (attempts: {attempt})")
+            io_manager.save_book(text)
             return literature
         else:
             logging.debug(f"Literature rejected by LLM on attempt {attempt}")
@@ -74,18 +81,26 @@ def select_album(io_manager, literature):
 
     Args:
         io_manager: IOManager instance for output
-        literature: Literature excerpt dict with info
+        literature: Literature excerpt dict with info, or None if literature unavailable
 
     Returns:
-        dict: Selected album with 'id', 'name', 'artist', 'year', 'genres' keys
+        dict: Selected album with 'id', 'name', 'artist', 'year', 'genres' keys, or None if Navidrome unavailable
     """
     logging.info("Starting album selection")
 
     albums = get_navidrome_albums(count=5)
-    formatted_albums = format_albums(albums)
-    formatted_literature = format_literature(literature)
 
-    album_prompt = f"""Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
+    # Graceful degradation: proceed without album data
+    if not albums:
+        logging.warning("Navidrome unavailable, skipping album selection")
+        return None
+
+    formatted_albums = format_albums(albums)
+
+    # Adapt prompt based on literature availability
+    if literature:
+        formatted_literature = format_literature(literature)
+        album_prompt = f"""Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
 
 {formatted_albums}
 
@@ -94,9 +109,23 @@ def select_album(io_manager, literature):
 Respond in this exact format strictly:
 REASONING: Two or three sentences considering different options before deciding on the best choice.
 VERDICT: [number only] (just the number 1-5, nothing else)"""
+    else:
+        # Select album without literature context
+        album_prompt = f"""Please select one and only one of the following albums which would be most interesting for a morning wake-up greeting.
+
+{formatted_albums}
+
+Respond in this exact format strictly:
+REASONING: Two or three sentences considering different options before deciding on the best choice.
+VERDICT: [number only] (just the number 1-5, nothing else)"""
 
     io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
     evaluation = send_ollama_request(album_prompt)
+
+    if evaluation is None:
+        logging.error("Ollama request failed during album selection")
+        return None
+
     io_manager.print_section("ALBUM SELECTION - RESPONSE", evaluation)
 
     # Parse LLM verdict using regex
@@ -123,11 +152,24 @@ def analyze_album_art(io_manager, album):
 
     Args:
         io_manager: IOManager instance for output and file saving
-        album: Album dict (modified in place with 'songs' and 'coverart' fields)
+        album: Album dict (modified in place with 'songs' and 'coverart' fields), or None if no album
     """
     logging.info("Starting album art analysis")
 
+    # Graceful degradation: skip if no album selected
+    if not album:
+        logging.warning("No album available, skipping art analysis")
+        return
+
     album_details = get_album_details(album['id'])
+
+    # Graceful degradation: handle Navidrome failures during detail fetch
+    if not album_details:
+        logging.warning("Album details unavailable, skipping art analysis")
+        album['songs'] = None
+        album['coverart'] = None
+        return
+
     album['songs'] = album_details.get('songs')
 
     if not album_details['coverart']:
@@ -231,6 +273,11 @@ Please keep the response between {length_bounds[0]} and {length_bounds[1]} words
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt)
+
+    if greeting is None:
+        logging.error("Ollama request failed during synthesis")
+        return None
+
     io_manager.print_section("SYNTHESIS - RESPONSE", greeting)
 
     logging.info("Synthesis layer complete")

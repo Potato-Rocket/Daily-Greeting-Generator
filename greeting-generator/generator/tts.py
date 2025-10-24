@@ -72,7 +72,7 @@ def send_to_playback_server(audio_path, album, max_retries=5):
 
     Args:
         audio_path: Path to WAV file to send
-        album: Album dict containing 'songs' list with 'url' keys
+        album: Album dict containing 'songs' list with 'url' keys, or None if no album available
         max_retries: Maximum number of retry attempts (default: 5)
 
     Returns:
@@ -83,9 +83,13 @@ def send_to_playback_server(audio_path, album, max_retries=5):
         logging.error(f"Audio file not found: {audio_path}")
         return False
 
-    # Extract song URLs from album
-    song_urls = [song['url'] for song in album.get('songs', [])]
-    logging.info(f"Preparing to send greeting + {len(song_urls)} song URLs to playback server")
+    # Extract song URLs from album (empty list if album is None or has no songs)
+    if album and album.get('songs'):
+        song_urls = [song['url'] for song in album['songs']]
+        logging.info(f"Preparing to send greeting + {len(song_urls)} song URLs to playback server")
+    else:
+        song_urls = []
+        logging.info("Preparing to send greeting without album data to playback server")
 
     for attempt in range(1, max_retries + 1):
         try:
