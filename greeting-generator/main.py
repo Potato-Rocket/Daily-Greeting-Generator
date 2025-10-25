@@ -23,9 +23,11 @@ from generator.io_manager import IOManager, setup_logging
 from generator.data_sources import get_weather_data
 from generator.pipeline import (
     validate_literature,
+    select_words,
     select_album,
     analyze_album_art,
-    synthesize_materials
+    synthesize_materials,
+    calculate_greeting_length
 )
 from generator.llm import unload_all_models
 from generator.tts import synthesize_greeting, send_to_playback_server
@@ -49,6 +51,8 @@ def main():
 
         logging.info("=== PIPELINE START ===")
 
+        greeting_length = calculate_greeting_length()
+
         try:
             # Stage 1: Weather data
             logging.info("Stage 1: Weather data")
@@ -65,6 +69,7 @@ def main():
             literature = validate_literature(io_manager, max_attempts=5)
             if not literature:
                 logging.warning("Literature unavailable after 5 attempts, proceeding without literary data")
+            select_words(io_manager, literature, greeting_length)
             io_manager.update_data_file(literature=literature)
 
             # Stage 3: Album selection
@@ -81,7 +86,7 @@ def main():
 
             # Stage 5: Synthesis layer
             logging.info("Stage 5: Synthesis")
-            greeting = synthesize_materials(io_manager, weather, literature, album)
+            greeting = synthesize_materials(io_manager, weather, literature, album, greeting_length)
 
             if not greeting:
                 logging.error("Pipeline aborted: Synthesis failed (Ollama unavailable)")

@@ -98,3 +98,21 @@ Tracklist:
         string += f"\nCover art description:\n{album_data['coverart']}"
 
     return string
+
+
+def format_jabberwocky(jabberwocky_words):
+    """
+    Format list of jabberwocky words into human-readable string.
+
+    Args:
+        jabberwocky_words: List of generated nonsense words, or None if generation unavailable
+
+    Returns:
+        str: Formatted comma-separated list of jabberwocky words
+    """
+    if not jabberwocky_words:
+        logging.warning("No jabberwocky words provided for formatting")
+        return "JABBERWOCKY WORDS: Not available"
+
+    word_list = "\n".join(jabberwocky_words)
+    return f"JABBERWOCKY WORDS:\n{word_list}"

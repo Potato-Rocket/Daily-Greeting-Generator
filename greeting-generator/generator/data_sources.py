@@ -139,14 +139,14 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
 
         if response.status_code != 200:
             logging.error(f"Gutendex API returned status {response.status_code}")
-            return None
+            return None, None
 
         data = response.json()
         books = data.get('results', [])
 
         if not books:
             logging.warning(f"No books found on Gutendex page {random_page}")
-            return None
+            return None, None
 
         logging.debug(f"Found {len(books)} books on page {random_page}")
 
@@ -162,7 +162,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
 
         if not text_url:
             logging.warning(f"No plain text format for book '{title}' (ID: {book_id})")
-            return None
+            return None, None
 
         logging.info(f"Fetching text for '{title}'")
         logging.debug(f"Book ID {book_id}, URL: {text_url}")
@@ -172,7 +172,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
         logging.debug(f"Book text download took {time.time() - text_start:.2f}s")
         if text_response.status_code != 200:
             logging.error(f"Failed to fetch book text (status {text_response.status_code})")
-            return None
+            return None, None
 
         text = text_response.text
 
@@ -202,7 +202,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
 
         if len(text) < padding * 2 + length:
             logging.warning(f"Book text too short after trimming ({len(text)} chars)")
-            return None
+            return None, None
 
         # Remove padding from start/end, extract random excerpt
         text = text[padding:-padding]
@@ -227,7 +227,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
 
     except Exception as e:
         logging.exception(f"Literature fetch error: {e}")
-        return None
+        return None, None
 
 
 def get_navidrome_albums(count=5):

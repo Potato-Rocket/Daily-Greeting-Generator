@@ -14,54 +14,17 @@ Create urgent, whimsical wake-up messages that stimulate consciousness through c
 2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
 3. **Music metadata** from Navidrome server (5 random albums → curated selection)
 
-### LLM Pipeline
+### Pipeline Flow
 
-The pipeline uses a multi-stage approach with validation and filtering:
-
-#### Stage 1: Literature Validation (max 5 attempts)
-- Fetch random literature excerpt
-- Evaluate suitability for themes, tone, imagery, metaphor, or sensory details
-- Prompt format: `REASONING` + `VERDICT: YES/NO`
-- Continue until suitable excerpt found or max attempts reached
-
-#### Stage 2: Album Selection (from 5 random albums)
-- Fetch 5 random albums from Navidrome
-- Select 1 album that pairs best with literature (by contrast or complement)
-- Prompt format: `REASONING` (2-3 sentences considering options) + `VERDICT: 1-5`
-- Parse verdict with regex fallback to random selection on failure
-
-#### Stage 3: Album Art Analysis (if available)
-- Fetch album details (tracklist + cover art)
-- Check if cover art is Navidrome default (blue vinyl with "Navidrome" text)
-  - Prompt format: `DESCRIPTION` + `REASONING` + `VERDICT: YES/NO`
-- If not default, analyze cover art with vision model
-  - Generate 3-5 bullet points describing colors, composition, style
-  - Store analysis text (discard base64 image)
-
-#### Stage 4: Synthesis & Composition (Single-step)
-- Merged synthesis and composition into single prompt for simplicity
-- Analyzes all inputs (weather + literature + album) and directly composes wake-up message
-- "FORGET the details" instruction encourages abstract residue over literal references
-- Maintains coherent thread while avoiding concrete mentions of source materials
-- Reminds LLM that listener can see weather but hasn't seen literature/album
-- Uses lognormal length distribution (mean/Q1/min) to vary greeting length naturally
-- Random voice model selection from available Piper TTS models
-
-#### Stage 5: TTS Synthesis
-- Convert greeting text to audio using Piper TTS (mono WAV, 22050 Hz)
-- Random voice model selection from `models/` directory
-- Configurable speech speed via `length_scale` parameter
-- Generated audio saved to dated directory
-
-#### Stage 6: Audio Delivery
-- Send WAV file to playback server via HTTP POST to `/greeting` endpoint
-- Retry logic: 5 attempts with exponential backoff (2s, 4s, 8s, 16s, 32s)
-- Smart retry: timeouts/network errors/5xx (skip 4xx client errors)
-
-#### Stage 7: Notification Chimes
-- Before and after greeting playback, random wind chime sound plays
-- Chimes selected from curated collection (6 variations)
-- 10-second playback limit to trim trailing silence
+1. **Weather** - Fetch from weather.gov API
+2. **Literature Validation** - Validate random excerpt (max 5 attempts, evaluate "interesting material")
+3. **Jabberwocky Word Selection** - Generate 3× candidate words, LLM selects subset based on literature style
+4. **Album Selection** - Choose 1 from 5 random albums (pairs with literature or standalone)
+5. **Album Art Analysis** - Check for default cover, analyze custom art with vision model
+6. **Synthesis** - Compose greeting with structured REASONING + GREETING output
+7. **TTS** - Generate audio with random Piper voice model
+8. **Delivery** - Send to playback server with retry logic
+9. **Playback** - Wind chime → greeting → wind chime at sunrise
 
 ### Delivery Architecture
 - **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Piper TTS, sends to playback server with retry logic
@@ -280,16 +243,6 @@ Copy from `config.ini.example` and customize:
 └── CLAUDE.md                            # Project documentation (this file)
 ```
 
-### Main Pipeline Flow (`greeting-generator/main.py`)
-
-1. **Initialize** - Load config, create IOManager, setup logging
-2. **Stage 1: Weather** - Fetch from weather.gov API
-3. **Stage 2: Literature** - Validate random excerpt (max 5 attempts)
-4. **Stage 3: Album Selection** - Choose 1 from 5 random albums
-5. **Stage 4: Album Art** - Analyze cover art with vision model
-6. **Stage 5: Synthesis** - Compose greeting directly from inputs (merged synthesis+composition)
-7. **Stage 6: TTS Synthesis** - Generate audio with random Piper TTS voice model
-8. **Stage 7: Delivery** - Send audio to playback server with retry logic
 
 ### Key Modules
 
@@ -302,6 +255,7 @@ Copy from `config.ini.example` and customize:
 **`generator/formatters.py`** - LLM-Ready Text Formatting
 - `format_weather(weather_data)` - Weather narrative for prompts
 - `format_literature(literature_data)` - Title, author, excerpt
+- `format_jabberwocky(words)` - Formatted word list for prompts
 - `format_albums(album_data)` - Numbered list of album options
 - `format_album(album_data)` - Single album with full details
 
@@ -312,9 +266,11 @@ Copy from `config.ini.example` and customize:
 
 **`generator/pipeline.py`** - Multi-Stage Pipeline Logic
 - `validate_literature(io_manager, max_attempts)` - Retry logic for suitable excerpts
+- `select_words(io_manager, literature, greeting_length)` - Generate + LLM-select jabberwocky words
 - `select_album(io_manager, formatted_lit)` - LLM-based album selection with regex parsing
 - `analyze_album_art(io_manager, album)` - Default check + vision analysis
-- `synthesize_materials(...)` - Merged synthesis+composition, directly produces greeting
+- `calculate_greeting_length()` - Lognormal length distribution
+- `synthesize_materials(...)` - Dynamic prompt assembly, structured REASONING + GREETING output
 
 **`generator/io_manager.py`** - File Operations
 - Context manager for pipeline file lifecycle
@@ -326,13 +282,12 @@ Copy from `config.ini.example` and customize:
 - `synthesize_greeting(text, io_manager)` - Piper TTS audio generation with random voice selection
 - `send_to_playback_server(audio_path, album, max_retries)` - HTTP POST audio + album streaming URLs to playback server with retry logic
 
-**`generator/jabberwocky.py`** - Phonetic Word Generation (Experimental)
+**`generator/jabberwocky.py`** - Phonetic Word Generation
 - `parse_words(book_path)` - Extract and normalize words from text file
 - `build_model(wordlist)` - Create N-gram frequency model (2-character context)
 - `length_distribution(wordlist)` - Compute weighted length distribution
 - `generate_word(model, distribution)` - Generate single pronounceable nonsense word
-- `generate_words(io_manager, count)` - Generate multiple jabberwocky words
-- Status: Not yet integrated into pipeline, requires book storage/retrieval implementation
+- `generate_words(io_manager, count)` - Generate multiple jabberwocky words from literature source
 
 **`generator/config.py`** - Configuration Management
 - `load_config(base_dir)` - Load INI configuration file from base directory
@@ -395,13 +350,11 @@ Copy from `config.ini.example` and customize:
 - [x] Add explicit Ollama model unloading to free GPU memory after pipeline completion
 - [x] Configure audio controls to stop any playing media before greeting playback
 
-### Phase 6: Jabberwocky Integration (In Progress)
+### Phase 6: Jabberwocky Integration ✅
 - [x] Implement N-gram Markov chain word generator
-- [ ] Add book text storage and retrieval from Gutenberg
-- [ ] Integrate jabberwocky into config system
-- [ ] Add jabberwocky stage to pipeline
-- [ ] Incorporate generated words into synthesis prompt
-- [ ] Implement graceful failure modes for Navidrome/Gutenberg
+- [x] Add jabberwocky stage to pipeline (word selection from literature)
+- [x] Incorporate generated words into synthesis prompt
+- [x] Implement graceful failure modes for Navidrome/Gutenberg
 
 ### Phase 7: System Refinement (Future)
 - [ ] Fix Ollama GPU utilization (currently not using GTX 1650)
@@ -668,3 +621,107 @@ NAVIDROME_BASE = "http://192.168.1.134:4533"
 ```
 
 **Functions**: Logical order (data fetching → formatting → pipeline stages)
+
+## Prompt Engineering
+
+**Last Updated**: October 24, 2025
+
+### Design Principles
+
+**1. Structured Output Formats**
+- All prompts end with "Respond in the following format exactly:"
+- Forces deliberate reasoning before generation
+- Enables reliable parsing without fragile regex
+
+**2. Listener Context Awareness**
+- Explicitly state what listener can/cannot perceive
+- Example: "The listener can see the weather but has NOT seen the literature or album"
+- Prevents awkward out-of-context references
+
+**3. Dynamic Prompt Assembly**
+- Build prompts conditionally based on available data sources
+- Graceful degradation when Navidrome/Gutenberg unavailable
+- Never assume all data sources will succeed
+
+### Stage-Specific Patterns
+
+**Literature Validation**
+```
+Evaluate whether excerpt is "interesting material from which to source literary
+style or elements" (not prescriptive themes/mood/imagery list)
+
+Format: REASONING + VERDICT: YES/NO
+```
+
+**Jabberwocky Word Selection**
+```
+Generate 3× target count using N-gram Markov chain from literature
+LLM selects subset (~50% of sqrt(greeting_length)) matching literature style
+Instruction: "Avoid nonsense words too close to real words"
+
+Format: List of selected words only, transcribed exactly
+Fallback: Random selection if parsing fails
+```
+
+**Album Selection**
+```
+Present 5 options as numbered list
+With literature: "pairs best with literature (by contrast or complement)"
+Without literature: "most interesting for morning wake-up"
+
+Format: REASONING (2-3 sentences) + VERDICT: [number only]
+Parse with regex, fallback to random on failure
+```
+
+**Album Art Analysis**
+```
+Two-step process:
+1. Default check: "Does this match Navidrome default (blue vinyl)?"
+   Format: DESCRIPTION + REASONING + VERDICT: YES/NO
+
+2. Custom art: "Provide detailed, factual description"
+   Changed from "including colors, composition, style" (too suggestive)
+   Format: 3-5 bullet points, markdown
+```
+
+**Synthesis (Core Greeting Generation)**
+```
+Dynamic assembly pattern:
+1. Base instruction: "Compose a motivating morning wake-up call"
+2. Conditional data sections (weather/literature/album if available)
+3. Listener context statements (what they can/cannot perceive)
+4. Style guidance: "Consider distinctive structural/stylistic elements"
+5. Jabberwocky integration: "integrate... as naturally as possible"
+6. Constraints: word count bounds, impersonal voice
+
+Format: REASONING (analysis + planning) + GREETING (final output)
+```
+
+**Key synthesis changes**:
+- Removed "FORGET the details" abstraction instruction (too vague)
+- Added explicit reasoning section before greeting generation
+- Changed from single-shot to think-then-write structure
+- "Avoid references too specific or out of context" (clearer than abstract residue)
+- "Weave into unified vision. Avoid scattered fragments." (coherence over mystery)
+
+### Format Instruction Evolution
+
+**Old**: "Respond in this exact format strictly:"
+**New**: "Respond in the following format exactly:"
+
+Subtle but clearer phrasing - "following format" is more natural than "exact format"
+
+### Length Control
+
+Lognormal distribution with configurable mean/Q1/min:
+- `calculate_greeting_length()` returns target word count
+- Bounds: `[target - rand(1,10), target + rand(1,10)]` for natural variation
+- Jabberwocky count scales with greeting length: `int(0.5 * sqrt(length))`
+
+### Parsing Strategies
+
+1. **Structured formats**: Extract sections with string splitting
+2. **Regex patterns**: `VERDICT:\s*(\d+)` for album selection
+3. **Validation**: Check extracted values against valid set
+4. **Graceful fallbacks**: Random selection when parsing fails
+5. **Logging**: Debug invalid LLM output without failing pipeline
