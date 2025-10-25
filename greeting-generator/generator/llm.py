@@ -11,7 +11,7 @@ import time
 
 # Ollama API configuration
 OLLAMA_BASE = "http://192.168.1.134:11434"
-MODEL = "mistral:7b"
+MODEL = "llama3.2:3b"
 IMAGE_MODEL = "gemma3:4b"
 
 
@@ -25,6 +25,7 @@ def send_ollama_request(prompt):
     Returns:
         str: LLM response text, or None on failure
     """
+    unload_model(IMAGE_MODEL)
     start_time = time.time()
     logging.info(f"Sending request to Ollama ({MODEL})")
 
@@ -65,6 +66,8 @@ def send_ollama_image_request(prompt, image_base64):
     Returns:
         str: Vision model response text, or None on failure
     """
+    unload_model(MODEL)
+
     start_time = time.time()
     logging.info(f"Sending vision request to Ollama ({IMAGE_MODEL})")
 
