@@ -1,21 +1,16 @@
 """
 Text-to-Speech Module for Daily Greeting Generator
 
-Handles audio rendering using Piper TTS and delivery to playback server.
+Handles audio rendering using Coqui TTS and delivery to playback server.
 """
 
-import wave
 import logging
 import time
 import random
+import torch
 import requests
 from pathlib import Path
-
-from piper.voice import PiperVoice
-from piper.config import SynthesisConfig
-
-# Piper TTS configuration
-LENGTH_SCALE = 1.0  # Speech speed (< 1 faster, > 1 slower, try 1.1-1.2 for ponderous)
+from TTS.api import TTS
 
 # Playback server address
 SERVER_ADDR = "http://192.168.1.36:7000"
@@ -23,39 +18,46 @@ SERVER_ADDR = "http://192.168.1.36:7000"
 
 def synthesize_greeting(text, io_manager):
     """
-    Convert greeting text to speech using Piper TTS and save as WAV file.
+    Convert greeting text to speech using Coqui TTS voice cloning and save as WAV file.
+
+    Randomly selects a voice directory, then uses all clip*.wav files from that
+    directory as references for voice cloning.
 
     Args:
         text: Greeting text to synthesize
         io_manager: The IOManager set up with the correct paths
+
     Returns:
         str: Path to generated audio file, or None on failure
     """
-    model_dir = Path(io_manager.model_dir)
-    if not model_dir.exists():
-        return None
-
-    models = list(model_dir.glob('*.onnx'))
-    if models is []:
-        return None
-    
-    model_path = random.choice(models)
-    
     output_path = io_manager.data_dir / f"greeting_{io_manager.date_str}.wav"
 
     try:
-        logging.info(f"Loading Piper voice model from {model_path}")
-        voice = PiperVoice.load(model_path)
+        logging.info("Initializing Coqui TTS with XTTS-v2 model")
+
+        # Initialize TTS with GPU if available
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        logging.info(f"Using device: {device}")
+
+        if device == "cuda":
+            gpu_name = torch.cuda.get_device_name(0)
+            logging.info(f"GPU detected: {gpu_name}")
+
+        tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+        logging.debug(f"Speaker options: {tts.speakers}")
+        speaker = random.choice(tts.speakers)
+        logging.info(f"Selected random speaker: {speaker}")
 
         logging.info(f"Synthesizing greeting to {output_path}")
-
-        # Configure synthesis parameters
-        syn_config = SynthesisConfig(length_scale=LENGTH_SCALE)
-
         start_time = time.time()
-        with wave.open(str(output_path), 'wb') as wav_file:
-            # Use synthesize_wav to handle audio generation and WAV writing
-            voice.synthesize_wav(text, wav_file, syn_config=syn_config)
+
+        # Synthesize with voice cloning (pass all clips as list)
+        tts.tts_to_file(
+            text=text,
+            speaker=speaker,
+            language="en",
+            file_path=str(output_path)
+        )
 
         elapsed = time.time() - start_time
         logging.info(f"TTS synthesis complete ({elapsed:.2f}s)")

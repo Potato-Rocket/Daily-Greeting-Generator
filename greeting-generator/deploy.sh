@@ -15,13 +15,13 @@ ssh "$SERVER" "mkdir -p $REMOTE_PATH"
 # Copy files using scp
 echo "Copying files..."
 scp main.py \
-    requirements.txt \
+    environment.yml \
     setup.sh \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"
 
 echo "Copying TTS models..."
-scp -r models tests "$SERVER:$REMOTE_PATH"
+scp -r tests "$SERVER:$REMOTE_PATH"
 
 echo "Copying generator module..."
 # Create temporary directory without __pycache__
