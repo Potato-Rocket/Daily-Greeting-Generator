@@ -98,6 +98,8 @@ def main():
 
             # Stage 6: TTS synthesis
             logging.info("Stage 6: TTS synthesis")
+            # Clean up Ollama to save VRAM
+            unload_all_models()
             result = synthesize_greeting(greeting, io_manager)
 
             if result:
@@ -111,8 +113,6 @@ def main():
             else:
                 logging.error("TTS synthesis failed, greeting text saved but no audio generated")
 
-            # Clean up Ollama
-            unload_all_models()
             logging.info("=== PIPELINE COMPLETE ===")
 
         except Exception as e:

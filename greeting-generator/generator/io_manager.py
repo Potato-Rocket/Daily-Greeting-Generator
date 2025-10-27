@@ -21,18 +21,19 @@ from .llm import MODEL, IMAGE_MODEL
 class IOManager:
     """Manages all file I/O for pipeline execution."""
 
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, date_str=None):
         """
         Initialize IOManager with dated subdirectory.
 
         Args:
             base_dir: Base directory for all outputs (default: BASE_DIR constant)
+            date_str: Optional date string (YYYY-MM-DD). If None, uses today's date.
         """
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(exist_ok=True)
 
         # Create dated subdirectory
-        self.date_str = datetime.now().strftime(r"%Y-%m-%d")
+        self.date_str = date_str if date_str else datetime.now().strftime(r"%Y-%m-%d")
 
         self.data_dir = self.base_dir / "data" / self.date_str
         self.data_dir.mkdir(exist_ok=True)

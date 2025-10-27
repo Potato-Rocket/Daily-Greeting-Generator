@@ -22,12 +22,12 @@ Create urgent, whimsical wake-up messages that stimulate consciousness through c
 4. **Album Selection** - Choose 1 from 5 random albums (pairs with literature or standalone)
 5. **Album Art Analysis** - Check for default cover, analyze custom art with vision model
 6. **Synthesis** - Compose greeting with structured REASONING + GREETING output
-7. **TTS** - Generate audio with random Piper voice model
+7. **TTS** - Generate audio with random Coqui XTTS-v2 speaker (GPU-accelerated)
 8. **Delivery** - Send to playback server with retry logic
 9. **Playback** - Wind chime → greeting → wind chime at sunrise
 
 ### Delivery Architecture
-- **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Piper TTS, sends to playback server with retry logic
+- **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Coqui XTTS-v2 with GPU acceleration (conda environment), sends to playback server with retry logic
 - **Playback server** (FitPC3 music server): Flask service receives audio on port 7000, calculates sunrise time, stores schedule file
 - **Sunrise playback**: Bash script (`check_sunrise.sh`) checks every 5 minutes via cron, plays random chime, then greeting through room speakers using `aplay -Dplug:default` for automatic mono-to-stereo conversion, sets volume to 100% before playback, plays another chime after completion
 - **Notification system**: Separate `notifications/` module with wind chime sounds and playback script, shared between greeting system and future notification features
@@ -38,30 +38,31 @@ Create urgent, whimsical wake-up messages that stimulate consciousness through c
 
 **Run pipeline manually:**
 ```bash
-cd greeting-generator && ./venv/bin/python main.py
+cd greeting-generator && conda activate coqui && python main.py
 ```
 
 **Test specific stages:**
 ```bash
 cd greeting-generator
+conda activate coqui
 # Test synthesis only (uses existing data)
-./venv/bin/python tests/test_llm.py
+python tests/test_llm.py
 
 # Test TTS synthesis only (uses existing greeting text)
-./venv/bin/python tests/test_tts.py
+python tests/test_tts.py
 
 # Test audio delivery only (uses existing WAV file)
-./venv/bin/python tests/test_send.py
+python tests/test_send.py
 ```
 
 **Deploy to server:**
 ```bash
-cd greeting-generator && ./deploy.sh  # Includes TTS models, excludes __pycache__
+cd greeting-generator && ./deploy.sh  # Copies code and environment.yml, excludes __pycache__
 ```
 
 **Setup (run once after deployment):**
 ```bash
-cd greeting-generator && ./setup.sh  # Creates venv, installs deps, sets up 2am cron job
+cd greeting-generator && ./setup.sh  # Creates conda env, installs deps, sets up 2am cron job
 ```
 
 **Monitor execution:**
@@ -152,11 +153,8 @@ Copy from `config.ini.example` and customize:
 **[composition]**
 - `mean_length`, `q1_length`, `min_length` - Greeting length parameters (lognormal distribution)
 
-**[tts]**
-- `length_scale` - Speech speed multiplier (>1 slower, <1 faster)
-
 **[playback]**
-- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000/greeting`)
+- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000`)
 
 ### Playback Configuration (`greeting-playback/config.ini`)
 
@@ -180,7 +178,7 @@ Copy from `config.ini.example` and customize:
 │   ├── main.py                          # Main pipeline entry point
 │   ├── config.ini                       # Generator configuration (gitignored)
 │   ├── config.ini.example               # Generator config template
-│   ├── requirements.txt                 # Python dependencies (requests, piper-tts)
+│   ├── environment.yml                  # Conda environment with PyTorch, CUDA, Coqui TTS
 │   ├── setup.sh                         # Generator setup script
 │   ├── deploy.sh                        # Deploy generator to server
 │   │
@@ -192,29 +190,23 @@ Copy from `config.ini.example` and customize:
 │   │   ├── llm.py                       # Ollama API interface with model unloading
 │   │   ├── pipeline.py                  # Multi-stage pipeline logic
 │   │   ├── io_manager.py                # File I/O and logging setup
-│   │   ├── tts.py                       # Piper TTS synthesis + playback delivery
-│   │   └── jabberwocky.py               # N-gram Markov chain word generator (experimental)
+│   │   ├── tts.py                       # Coqui XTTS-v2 synthesis + playback delivery
+│   │   └── jabberwocky.py               # N-gram Markov chain word generator
 │   │
 │   ├── tests/                           # Test files
 │   │   ├── test_llm.py
 │   │   ├── test_tts.py
 │   │   └── test_send.py
 │   │
-│   ├── data/                            # Pipeline output (gitignored)
-│   │   └── YYYY-MM-DD/                  # Dated run directories
-│   │       ├── pipeline_YYYY-MM-DD.txt  # LLM prompts and responses
-│   │       ├── log_YYYY-MM-DD.txt       # Execution log
-│   │       ├── data_YYYY-MM-DD.json     # Structured data from all stages
-│   │       ├── greeting_YYYY-MM-DD.txt  # Final greeting text
-│   │       ├── greeting_YYYY-MM-DD.wav  # Synthesized audio
-│   │       └── coverart_YYYY-MM-DD.jpg  # Album cover (if analyzed)
-│   │
-│   └── models/                          # TTS models (gitignored, deployed separately)
-│       ├── en_US-ryan-high.onnx
-│       ├── en_US-ryan-high.onnx.json
-│       ├── en_US-lessac-high.onnx
-│       ├── en_US-lessac-high.onnx.json
-│       └── [other voice models...]
+│   └── data/                            # Pipeline output (gitignored)
+│       └── YYYY-MM-DD/                  # Dated run directories
+│           ├── pipeline_YYYY-MM-DD.txt  # LLM prompts and responses
+│           ├── log_YYYY-MM-DD.txt       # Execution log
+│           ├── data_YYYY-MM-DD.json     # Structured data from all stages
+│           ├── book_YYYY-MM-DD.txt      # Full literature source text
+│           ├── greeting_YYYY-MM-DD.txt  # Final greeting text
+│           ├── greeting_YYYY-MM-DD.wav  # Synthesized audio
+│           └── coverart_YYYY-MM-DD.jpg  # Album cover (if analyzed)
 │
 ├── greeting-playback/                   # Playback server components (FitPC3)
 │   ├── receive_greeting.py              # Flask API for receiving audio
@@ -279,7 +271,7 @@ Copy from `config.ini.example` and customize:
 - `print_section(title, content)` - Formatted headers for pipeline trace
 
 **`generator/tts.py`** - TTS Synthesis and Delivery
-- `synthesize_greeting(text, io_manager)` - Piper TTS audio generation with random voice selection
+- `synthesize_greeting(text, io_manager)` - Coqui XTTS-v2 audio generation with GPU acceleration and random speaker selection
 - `send_to_playback_server(audio_path, album, max_retries)` - HTTP POST audio + album streaming URLs to playback server with retry logic
 
 **`generator/jabberwocky.py`** - Phonetic Word Generation
@@ -321,11 +313,11 @@ Copy from `config.ini.example` and customize:
 - [x] Create album selection logic
 - [x] Design synthesis layer prompt
 - [x] Design composition layer prompt
-- [x] Add TTS synthesis with Piper
+- [x] Add TTS synthesis with Coqui XTTS-v2
 
 ### Phase 2: Deployment Infrastructure ✅
 - [x] Build Flask endpoint on FitPC3
-- [x] Create deployment scripts with venv support
+- [x] Create deployment scripts with conda environment support
 - [x] Add configuration system (INI files)
 - [x] Implement audio delivery to playback server
 

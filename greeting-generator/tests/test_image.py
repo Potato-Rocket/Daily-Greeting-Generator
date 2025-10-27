@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-Test Album Details Fetcher
+Test Album Art Analysis
 
-Loads album ID from previously stored data file and fetches detailed information
-including tracklist and cover art from Navidrome. Useful for testing album
-details fetching and cover art analysis without re-running the full pipeline.
+Loads album data from a previously stored data file and runs the vision
+model analysis. Useful for testing image analysis prompts without re-running
+the full pipeline.
 
 Usage:
-    python test_album.py
+    python test_image.py
 """
 
 import sys
-import json
 import logging
 from pathlib import Path
 
@@ -20,14 +19,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
-from generator.data_sources import get_album_details
+from generator.pipeline import analyze_album_art
 
 # Date to load data from
 DATE = "2025-10-26"
 
 
 def main():
-    """Run album details fetch test using stored album ID."""
+    """Run album art analysis test using stored album data."""
 
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
@@ -42,43 +41,31 @@ def main():
     io_manager = IOManager(base_dir, date_str=DATE)
     setup_logging(io_manager, logging.DEBUG)
 
-    logging.info("=== ALBUM DETAILS TEST START ===")
+    logging.info("=== ALBUM ART ANALYSIS TEST START ===")
     logging.info(f"Loading data from {io_manager.date_str}")
 
     try:
         # Load stored data
         data = io_manager.load_data_file()
         if not data:
-            logging.error("Album test aborted: Could not load data file")
+            logging.error("Test aborted: Could not load data file")
             return
 
         # Extract album data
         album = data.get('album')
         if not album:
-            logging.error("Album test aborted: No album found in data file")
-            return
-
-        album_id = album.get('id')
-        if not album_id:
-            logging.error("Album test aborted: No album ID found in album data")
+            logging.error("Test aborted: No album found in data file")
             return
 
         logging.info(f"Found album: {album.get('name')} by {album.get('artist')}")
 
-        # Fetch album details
-        album_details = get_album_details(album_id)
+        # Run album art analysis
+        analyze_album_art(io_manager, album)
 
-        if not album_details:
-            logging.error("Album details fetch failed")
-            return
-
-        # Display results as JSON
-        print(json.dumps(album_details, indent=2))
-
-        logging.info("=== ALBUM DETAILS TEST COMPLETE ===")
+        logging.info("=== ALBUM ART ANALYSIS TEST COMPLETE ===")
 
     except Exception as e:
-        logging.exception(f"Album test error: {e}")
+        logging.exception(f"Album art test error: {e}")
         raise
 
 

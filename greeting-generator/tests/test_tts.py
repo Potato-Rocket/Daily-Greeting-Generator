@@ -3,13 +3,11 @@
 Test TTS Runner
 
 Loads previously generated greeting text from stored data file and synthesizes
-to audio using Piper TTS. Useful for testing TTS changes without re-running
+to audio using Coqui XTTS-v2. Useful for testing TTS changes without re-running
 the full pipeline.
 
 Usage:
-    python test_tts.py [YYYY-MM-DD]
-
-If date is omitted, uses today's date.
+    python test_tts.py
 """
 
 import sys
@@ -22,6 +20,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.tts import synthesize_greeting
+
+# Date to load data from
+DATE = "2025-10-26"
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
     apply_config(config)
 
     # Initialize I/O manager and full logging
-    io_manager = IOManager(base_dir)
+    io_manager = IOManager(base_dir, date_str=DATE)
     setup_logging(io_manager, logging.DEBUG)
 
     logging.info("=== TTS TEST START ===")
