@@ -251,32 +251,6 @@ def analyze_album_art(io_manager, album):
     coverart_bytes = base64.b64decode(album_details['coverart'])
     io_manager.save_coverart(coverart_bytes)
 
-    # Check if cover art is Navidrome default placeholder
-    default_prompt = """Determine whether this image matches the default album cover image for Navidrome, a blue vinyl record on a blank background with the word "Navidrome" on it.
-
-Respond in the following format exactly:
-DESCRIPTION: One sentence description of the image.
-REASONING: One sentence reasoning about whether the cover art matches not.
-VERDICT: YES if it matches NO if it does not"""
-
-    io_manager.print_section("ALBUM ART - DEFAULT CHECK PROMPT", default_prompt)
-    response = send_ollama_image_request(default_prompt, album_details['coverart'])
-
-    if response is None:
-        logging.error("Cover art default check failed, skipping analysis")
-        album['coverart'] = None
-        return
-
-    io_manager.print_section("ALBUM ART - DEFAULT CHECK RESPONSE", response)
-
-    if "VERDICT: YES" in response.upper():
-        logging.info("Cover art is Navidrome default placeholder, discarding")
-        album['coverart'] = None
-        return
-
-    # Cover art is custom, proceed with detailed analysis
-    logging.info("Cover art is custom, proceeding with analysis")
-
     art_prompt = """Provide a detailed, factual description of the provided album cover art. Use three to five bullet points.
 
 Respond with only the description, no other text. Use markdown bullet points."""

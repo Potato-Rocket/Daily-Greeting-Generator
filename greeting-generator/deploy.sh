@@ -20,7 +20,7 @@ scp main.py \
     config.ini.example \
     "$SERVER:$REMOTE_PATH/"
 
-echo "Copying TTS models..."
+echo "Copying test scripts..."
 scp -r tests "$SERVER:$REMOTE_PATH"
 
 echo "Copying generator module..."
@@ -41,4 +41,4 @@ echo "Next steps:"
 echo "1. SSH to server: ssh $SERVER"
 echo "2. cd $REMOTE_PATH"
 echo "3. Run setup (first time only): ./setup_generator.sh"
-echo "4. Edit config: nano config.ini"
+echo "4. Edit config: vim config.ini"

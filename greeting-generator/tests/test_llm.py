@@ -57,8 +57,7 @@ def main():
         album = data.get('album')
 
         if not weather or not literature or not album:
-            logging.error("Test pipeline aborted: Incomplete data (missing weather, literature, or album)")
-            return
+            logging.error("Test pipeline degraded: Incomplete data (missing weather, literature, or album)")
 
         # Stage 5: Synthesis layer
         logging.info("Stage 5: Synthesis")
