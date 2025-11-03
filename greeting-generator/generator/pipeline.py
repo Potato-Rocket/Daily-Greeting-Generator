@@ -367,7 +367,7 @@ REASONING:"""
 (A few paragraphs planning the greeting)
 
 GREETING:
-(The final generated greeting)"""
+(The final generated greeting. Avoid extraneous punctuation such as surrounding quotations)"""
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt)
@@ -379,10 +379,10 @@ GREETING:
     io_manager.print_section("SYNTHESIS - RESPONSE", greeting)
 
     # Extract only the GREETING section from the response
-    if "GREETING:" in greeting.upper():
+    if "FORMATTED:" in greeting:
         # Find the GREETING: marker and extract everything after it
-        greeting_start = greeting.upper().find("GREETING:")
-        final_greeting = greeting[greeting_start + len("GREETING:"):].strip()
+        greeting_start = greeting.find("FORMATTED:")
+        final_greeting = greeting[greeting_start + len("FORMATTED:"):].strip()
         # Remove surrounding quotes if present
         if final_greeting.startswith('"') and final_greeting.endswith('"'):
             final_greeting = final_greeting[1:-1]

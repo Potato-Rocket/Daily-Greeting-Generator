@@ -10,7 +10,7 @@ Runs as a systemd service on the music playback server.
 import logging
 import configparser
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify
 from astral import LocationInfo
 from astral.sun import sun
@@ -92,7 +92,7 @@ def load_config():
 
 def get_sunrise_time(config):
     """
-    Calculate today's sunrise time with configured offset, then sves to a file for the checker script.
+    Calculate today's sunrise time with configured offset, then saves to a file for the checker script.
 
     Since greetings are generated at 2am, "today" refers to the upcoming
     sunrise later this morning.
@@ -103,22 +103,26 @@ def get_sunrise_time(config):
     try:
         location = LocationInfo(latitude=config['lat'], longitude=config['lon'])
 
-        # calculate sunrise time
-        s = sun(location.observer, date=datetime.now())
-        app.logger.info(f"Calculating sunrise for today ({datetime.now().strftime('%Y-%m-%d')})")
+        # Get current time in UTC (to match astral's UTC output)
+        now_utc = datetime.now(timezone.utc)
 
-        # get the sunrise for today plus offset
+        # Calculate sunrise time for today
+        s = sun(location.observer, date=now_utc)
+        app.logger.info(f"Calculating sunrise for today ({now_utc.strftime('%Y-%m-%d')})")
+
+        # Get the sunrise for today plus offset
         sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
-        # if the sunrise for today has already passed
-        if sunrise.time() < datetime.now().time().replace(tzinfo=None):
-            app.logger.info(f"Sunrise has already happened today!")
-            time = datetime.now() + timedelta(days=1)
-            app.logger.info(f"Calculating sunrise for tomorrow ({time.strftime('%Y-%m-%d')})")
-            s = sun(location.observer, time)
+        # Compare full datetime objects (both are now UTC-aware)
+        if sunrise < now_utc:
+            app.logger.info(f"Sunrise has already passed today at {sunrise.strftime('%H:%M:%S')} UTC")
+            # Calculate tomorrow's sunrise
+            tomorrow = now_utc + timedelta(days=1)
+            app.logger.info(f"Calculating sunrise for tomorrow ({tomorrow.strftime('%Y-%m-%d')})")
+            s = sun(location.observer, date=tomorrow)
             sunrise = s['sunrise'] + timedelta(minutes=config['offset_minutes'])
 
-        app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M')} UTC")
+        app.logger.info(f"Sunrise time calculated: {sunrise.strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
     except Exception as e:
         app.logger.exception(f"Error calculating sunrise: {e}")
