@@ -43,13 +43,20 @@ fi
 # Setup cron job for daily execution at 2am
 echo ""
 echo "Setting up cron job for daily execution..."
-# Determine conda initialization script path
-CONDA_SH="$HOME/miniconda3/etc/profile.d/conda.sh"
-if [ ! -f "$CONDA_SH" ]; then
-    CONDA_SH="$HOME/anaconda3/etc/profile.d/conda.sh"
+
+# Determine conda environment Python path
+CONDA_BASE=$(conda info --base)
+CONDA_PYTHON="$CONDA_BASE/envs/coqui/bin/python"
+
+if [ ! -f "$CONDA_PYTHON" ]; then
+    echo "ERROR: Could not find conda Python at $CONDA_PYTHON"
+    echo "Please verify that the 'coqui' environment was created successfully"
+    exit 1
 fi
 
-CRON_LINE="0 2 * * * source $CONDA_SH && conda activate coqui && cd $BASE_DIR && python $BASE_DIR/main.py"
+# Build cron line with absolute paths
+# Note: main.py uses Path(__file__).parent for base_dir, so no cd needed
+CRON_LINE="0 2 * * * $CONDA_PYTHON $BASE_DIR/main.py >> $BASE_DIR/data/cron.log 2>&1"
 
 # Check if cron job already exists
 if crontab -l 2>/dev/null | grep -q "main.py"; then
@@ -57,7 +64,10 @@ if crontab -l 2>/dev/null | grep -q "main.py"; then
 else
     # Add cron job
     (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
-    echo "Cron job added (runs daily at 2am)"
+    echo "Cron job added successfully (runs daily at 2am)"
+    echo "  Python: $CONDA_PYTHON"
+    echo "  Script: $BASE_DIR/main.py"
+    echo "  Logs: $BASE_DIR/data/cron.log"
 fi
 
 echo ""
