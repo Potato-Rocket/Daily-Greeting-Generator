@@ -4,7 +4,7 @@
 
 set -e
 
-SERVER="oscar@fitpc3-music-server"
+SERVER="oscar@fitPC3-music-player"
 REMOTE_PATH="/home/oscar/daily-greeting"
 
 echo "Deploying playback server to $SERVER:$REMOTE_PATH"

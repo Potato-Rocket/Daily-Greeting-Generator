@@ -1,4 +1,4 @@
-SERVER="oscar@fitpc3-music-server"
+SERVER="oscar@fitPC3-music-player"
 REMOTE_PATH="/home/oscar/notifications"
 
 echo "Deploying notification script to $SERVER:$REMOTE_PATH"
