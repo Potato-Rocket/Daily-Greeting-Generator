@@ -17,25 +17,23 @@ INITIATOR = '#'
 TERMINATOR = '$'
 CONTEXT_SIZE = 2
 
-def parse_words(io_manager):
+def parse_words(text):
     """
-    Fetches and parses the selected book into a list of unique words.
+    Parses the provided text into a list of unique words.
 
     Normalizes unicode into NFKD so that diacritics are preserved.
     Apostrophes are standardized and preserved, as are compound word hyphenations.
     Punctuation and extraneous special characters are properly stripped.
 
     Args:
-        io_manager: The IOManager currently in use
-    
+        text: The source text to parse
+
     Returns:
-        list: The unique words in the book, properly encoded
+        list: The unique words in the text, properly encoded, or None on failure
     """
     try:
-        # Load the book and verify
-        text = io_manager.load_book()
         if text is None:
-            logging.warning("No stored book found")
+            logging.warning("No text provided for parsing")
             return None
         
         logging.info("Normalizing and fixing Unicode encoding")
@@ -70,9 +68,9 @@ def parse_words(io_manager):
                     wordlist.append(word)
 
         return wordlist
-    
+
     except Exception as e:
-        print(f"Failed to parse selected book: {e}")
+        logging.exception(f"Failed to parse text: {e}")
         return None
 
 
@@ -172,27 +170,27 @@ def generate_word(model, distribution):
     return word.strip(INITIATOR + TERMINATOR)
 
 
-def generate_words(io_manager, count):
+def generate_words(text, count):
     """
-    Uses the selected book to generate some number of Jabberwocky style gibberish words.
+    Uses the provided text to generate Jabberwocky style gibberish words.
 
     Args:
-        io_manager: The IOManager currently in use
+        text: Source text to build Markov chain model from
         count: The number of words to generate
-    
+
     Returns:
-        list: The list of generated words
+        list: The list of generated words, or None on failure
     """
 
-    wordlist = parse_words(io_manager)
+    wordlist = parse_words(text)
     if wordlist is None:
-        logging.warning("No Jabberwocky words generated")
+        logging.warning("Text parsing failed, cannot generate Jabberwocky words")
         return None
 
     model = build_model(wordlist)
     distribution = length_distribution(wordlist)
 
-    logging.info("Generating {count} Jabberwocky words")
+    logging.info(f"Generating {count} Jabberwocky words")
     generated = []
     while len(generated) < count:
         word = generate_word(model, distribution)
@@ -200,7 +198,7 @@ def generate_words(io_manager, count):
         if word in wordlist or word in generated:
             logging.debug(f"Discarded \"{word}\" because it is a word")
             continue
-        print(f"Added \"{word}\" to list")
+        logging.debug(f"Added \"{word}\" to list")
         generated.append(word)
     
     return generated

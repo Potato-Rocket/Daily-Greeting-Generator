@@ -78,42 +78,49 @@ VERDICT: YES if suitable NO if not"""
 def select_words(io_manager, literature, greeting_length=MESSAGE_MEAN_LEN):
     """
     Generate jabberwocky words and use LLM to select the most interesting subset.
+    Modifies literature dict in place with 'jabberwocky' field.
 
     Args:
         io_manager: IOManager instance for output
-        literature: Literature excerpt dict (used as source for word generation), or None
-        generate_count: Number of target words in the greeting
+        literature: Literature excerpt dict (modified in place with 'jabberwocky' field), or None
+        greeting_length: Target greeting length in words for scaling jabberwocky count
     """
-    # Check if literature is available for word generation
-    if not literature:
-        logging.warning("No literature available, skipping jabberwocky word generation")
-        return
-    
     logging.info("Starting jabberwocky word selection")
+
+    # Graceful degradation: skip if no literature available
+    if not literature:
+        logging.warning("No literature available, skipping jabberwocky word selection")
+        return
 
     select_count = int(0.5 * (greeting_length ** 0.5))
     generate_count = select_count * 3
 
-    # Generate candidate words
-    generated_words = generate_words(io_manager, generate_count)
+    # Load full book text for word generation
+    book_text = io_manager.load_book()
+    if not book_text:
+        logging.warning("No book text available, skipping jabberwocky word selection")
+        literature['jabberwocky'] = None
+        return
+
+    # Generate candidate words from full book text
+    generated_words = generate_words(book_text, generate_count)
 
     if not generated_words:
         logging.warning("Jabberwocky word generation failed, skipping word selection")
+        literature['jabberwocky'] = None
         return
 
     logging.info(f"Generated {len(generated_words)} candidate words")
 
     # Format words as numbered list for LLM
     formatted_words = format_jabberwocky(generated_words)
-    formatted_literature = format_literature(literature)
 
-    selection_prompt = f"""Select {select_count} of the {generate_count} randomly generated, Jabberwocky-style nonsense words. Try to make an interesting and varied selection which most reflects the writing style of the following literature excerpt.
-
-{formatted_literature}
-    
-Avoid nonsense words which might sound too close to real words.
+    selection_prompt = f"""Select {select_count} of the {generate_count} randomly generated, Jabberwocky-style nonsense words.
 
 {formatted_words}
+
+Prioritize words that look like they could be real words with meaning.
+Avoid words that are too close to real words or meaning.
 
 Repond with your chosen words only and no other text. Transcribe exactly."""
 
@@ -122,6 +129,7 @@ Repond with your chosen words only and no other text. Transcribe exactly."""
 
     if selection_response is None:
         logging.error("Ollama request failed during word selection")
+        literature['jabberwocky'] = None
         return
 
     io_manager.print_section("WORD SELECTION - RESPONSE", selection_response)
@@ -140,9 +148,10 @@ Repond with your chosen words only and no other text. Transcribe exactly."""
         selected_words = random.sample(generated_words, min(select_count, len(generated_words)))
         logging.debug(f"Random fallback selected {len(selected_words)} words")
     else:
-        logging.debug(f"Selected {len(selected_words)} words: {', '.join(selected_words)}")
+        logging.info(f"Selected {len(selected_words)} words: {', '.join(selected_words)}")
 
     literature['jabberwocky'] = selected_words
+    logging.info("Jabberwocky word selection complete")
 
 
 def select_album(io_manager, literature):
@@ -290,7 +299,7 @@ def calculate_greeting_length():
     return length
 
 
-def synthesize_materials(io_manager, weather, literature, album, greeting_length=MESSAGE_MEAN_LEN):
+def generate_greeting(io_manager, weather, literature, album, greeting_length=MESSAGE_MEAN_LEN):
     """
     Run synthesis layer to compose final greeting from inputs.
 
@@ -302,7 +311,7 @@ def synthesize_materials(io_manager, weather, literature, album, greeting_length
 
     Returns:
         str: Final daily greeting message
-    """
+    """    
     # Calculate target greeting length
     length = greeting_length
     length_bounds = [length - random.randint(1, 10), length + random.randint(1, 10)]
@@ -310,7 +319,7 @@ def synthesize_materials(io_manager, weather, literature, album, greeting_length
 
     logging.info("Starting synthesis layer")
 
-    synthesis_prompt = "Compose a motivating morning wake-up call."
+    synthesis_prompt = "Compose a motivating morning wake-up call for Oscar."
 
     # Only use this blurb
     if album or weather or literature:
@@ -336,38 +345,14 @@ def synthesize_materials(io_manager, weather, literature, album, greeting_length
         if album:
             synthesis_prompt += "\nThe listener has NOT seen or heard the album yet."
 
-        synthesis_prompt += "\n\n"
+        synthesis_prompt += "\nAvoid references that are too specific or out of context.\n\n"
 
         if literature:
-            synthesis_prompt += "Consider whether the literature excerpt has any distinctive structural or stylistic elements. "
+            synthesis_prompt += "Consider whether the literature excerpt has any distinctive structural or stylistic elements.\n\n"
 
-        synthesis_prompt += """Avoid references that are too specific or out of context.
+        synthesis_prompt += f"""Weave these elements into a unified vision.
 
-Weave these elements into a unified vision. Avoid scattered fragments."""
-
-    if literature['jabberwocky']:
-        synthesis_prompt += f"""
-
-Furthermore, please use the integrate the following Jabberwocky-style nonsense words with the greeting, as naturally as possible.
-
-{format_jabberwocky(literature['jabberwocky'])}"""
-
-    synthesis_prompt += f"""
-    
-Maintain an impersonal voice.
-
-Please keep the final greeting between {length_bounds[0]} and {length_bounds[1]} words in length. Respond in the following format exactly:
-
-REASONING:"""
-    
-    if album or literature or weather:
-        synthesis_prompt += "\n(A few paragraphs pondering the sources)"
-
-    synthesis_prompt += """
-(A few paragraphs planning the greeting)
-
-GREETING:
-(The final generated greeting. Avoid extraneous punctuation such as surrounding quotations)"""
+Respond with the final greeting only and no other text. Aim for {length * 2} words, avoid surrounding quotes."""
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt)
@@ -378,11 +363,56 @@ GREETING:
 
     io_manager.print_section("SYNTHESIS - RESPONSE", greeting)
 
+    prelim_greeting = greeting.strip()
+    # Remove surrounding quotes if present
+    if prelim_greeting.startswith('"') and prelim_greeting.endswith('"'):
+        prelim_greeting = prelim_greeting[1:-1]
+    
+    prelim_length = len(prelim_greeting.split())
+
+    logging.info("Synthesis layer complete")
+    logging.info("Starting revision layer")
+
+    # Revising greeting to align with constraints
+    revision_prompt = f"""Revise this greeting to meet the following requirements:
+
+{prelim_greeting}
+
+Requirements:
+- Between {length_bounds[0]} and {length_bounds[1]} words in length (currently {prelim_length}, cut by {(prelim_length - length) / prelim_length * 100:.2f}%)
+- Avoid self-reference pronouns (I, we, me, my, our, etc.)
+- Preserve the vision but ensure coherency"""
+    
+    if literature and literature.get('jabberwocky'):
+        revision_prompt += f"""
+
+Please integrate all of the following Jabberwocky-style nonsense words with the greeting as naturally as possible.
+{format_jabberwocky(literature['jabberwocky'])}"""
+
+    revision_prompt += """
+
+Respond in the following format exactly:
+REASONING:
+(A few sentences for each requirement considering how the current greeting does or does not fit the requirement)
+(A few paragraps strategizing how to revise the greeting to fit said requirements)
+
+GREETING:
+(The final greeting. No extraneous text or surrounding quotes)"""
+
+    io_manager.print_section("REVISION - PROMPT", revision_prompt)
+    greeting = send_ollama_request(revision_prompt)
+
+    if greeting is None:
+        logging.error("Ollama request failed during revision")
+        return prelim_greeting
+
+    io_manager.print_section("REVISION - RESPONSE", greeting)
+
     # Extract only the GREETING section from the response
-    if "FORMATTED:" in greeting:
+    if "GREETING:" in greeting:
         # Find the GREETING: marker and extract everything after it
-        greeting_start = greeting.find("FORMATTED:")
-        final_greeting = greeting[greeting_start + len("FORMATTED:"):].strip()
+        greeting_start = greeting.find("GREETING:")
+        final_greeting = greeting[greeting_start + len("GREETING:"):].strip()
         # Remove surrounding quotes if present
         if final_greeting.startswith('"') and final_greeting.endswith('"'):
             final_greeting = final_greeting[1:-1]
@@ -391,6 +421,6 @@ GREETING:
         logging.warning("Could not find GREETING: marker in synthesis response, using full response")
         final_greeting = greeting.strip()
 
-    logging.info("Synthesis layer complete")
+    logging.info("Revision layer complete")
 
     return final_greeting

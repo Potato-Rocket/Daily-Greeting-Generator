@@ -13,7 +13,7 @@ from pathlib import Path
 from TTS.api import TTS
 
 # Playback server address
-SERVER_ADDR = "http://192.168.1.36:7000"
+SERVER_ADDR = "http://100.92.176.128:7000"
 
 
 def synthesize_greeting(text, io_manager):

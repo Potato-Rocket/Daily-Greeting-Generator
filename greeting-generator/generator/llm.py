@@ -10,9 +10,9 @@ import time
 
 
 # Ollama API configuration
-OLLAMA_BASE = "http://192.168.1.134:11434"
+OLLAMA_BASE = "http://localhost:11434"
 MODEL = "llama3.2:3b"
-IMAGE_MODEL = "gemma3:4b"
+IMAGE_MODEL = "llava:7b"
 
 
 def send_ollama_request(prompt):

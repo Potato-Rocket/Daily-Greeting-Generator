@@ -19,10 +19,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
-from generator.pipeline import synthesize_materials
+from generator.pipeline import generate_greeting
 
 # Date to load data from
-DATE = "2025-10-26"
+DATE = "2025-11-20"
 
 
 def main():
@@ -61,7 +61,7 @@ def main():
 
         # Stage 5: Synthesis layer
         logging.info("Stage 5: Synthesis")
-        greeting = synthesize_materials(io_manager, weather, literature, album)
+        greeting = generate_greeting(io_manager, weather, literature, album)
 
         if greeting:
             io_manager.save_greeting(greeting)

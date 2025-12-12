@@ -7,11 +7,12 @@ Executes the full multi-stage LLM pipeline for generating personalized wake-up m
 Stages:
 1. Weather data fetching
 2. Literature validation
-3. Album selection
-4. Album art analysis
-5. Synthesis layer
-6. Composition layer
+3. Jabberwocky word selection
+4. Album selection
+5. Album art analysis
+6. Synthesis layer
 7. TTS synthesis
+8. Playback server delivery
 """
 
 import json
@@ -26,7 +27,7 @@ from generator.pipeline import (
     select_words,
     select_album,
     analyze_album_art,
-    synthesize_materials,
+    generate_greeting,
     calculate_greeting_length
 )
 from generator.llm import unload_all_models
@@ -67,37 +68,41 @@ def main():
             # Stage 2: Literature validation
             logging.info("Stage 2: Literature validation")
             literature = validate_literature(io_manager, max_attempts=5)
+
             if not literature:
                 logging.warning("Literature unavailable after 5 attempts, proceeding without literary data")
+
+            # Stage 3: Jabberwocky word selection
+            logging.info("Stage 3: Jabberwocky word selection")
             select_words(io_manager, literature, greeting_length)
             io_manager.update_data_file(literature=literature)
 
-            # Stage 3: Album selection
-            logging.info("Stage 3: Album selection")
+            # Stage 4: Album selection
+            logging.info("Stage 4: Album selection")
             album = select_album(io_manager, literature)
 
             if not album:
                 logging.warning("Album selection unavailable, proceeding without music data")
 
-            # Stage 4: Album art analysis
-            logging.info("Stage 4: Album art analysis")
+            # Stage 5: Album art analysis
+            logging.info("Stage 5: Album art analysis")
             analyze_album_art(io_manager, album)
             io_manager.update_data_file(album=album)
 
-            # Stage 5: Synthesis layer
-            logging.info("Stage 5: Synthesis")
-            greeting = synthesize_materials(io_manager, weather, literature, album, greeting_length)
+            # Stage 6: Synthesis layer
+            logging.info("Stage 6: Final greeting")
+            greeting = generate_greeting(io_manager, weather, literature, album, greeting_length)
 
             if not greeting:
-                logging.error("Pipeline aborted: Synthesis failed (Ollama unavailable)")
+                logging.error("Pipeline aborted: Final greeting generation failed")
                 return
 
             io_manager.save_greeting(greeting)
             io_manager.update_data_file(greeting=greeting)
             logging.info("Greeting generated and saved")
 
-            # Stage 6: TTS synthesis
-            logging.info("Stage 6: TTS synthesis")
+            # Stage 7: TTS synthesis
+            logging.info("Stage 7: TTS synthesis")
             # Clean up Ollama to save VRAM
             unload_all_models()
             result = synthesize_greeting(greeting, io_manager)
@@ -105,7 +110,7 @@ def main():
             if result:
                 logging.info("Audio saved successfully")
 
-                logging.info("Stage 7: Sending to playback server")
+                logging.info("Stage 8: Sending to playback server")
                 send_success = send_to_playback_server(result, album)
 
                 if not send_success:

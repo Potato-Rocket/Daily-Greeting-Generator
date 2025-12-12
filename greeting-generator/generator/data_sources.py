@@ -21,7 +21,7 @@ LON = -71.81
 USER_AGENT = "DailyGreeting/1.0"
 
 # Navidrome server configuration
-NAVIDROME_BASE = "http://192.168.1.134:4533"
+NAVIDROME_BASE = "http://localhost:4533"
 NAVIDROME_USER = "username"
 NAVIDROME_PASS = "password"
 NAVIDROME_CLIENT = "DailyGreeting"
