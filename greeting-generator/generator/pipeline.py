@@ -16,7 +16,7 @@ import random
 import logging
 
 from .data_sources import get_random_literature, get_navidrome_albums, get_album_details
-from .formatters import format_literature, format_albums, format_album, format_weather, format_jabberwocky
+from .formatters import format_literature, format_albums, format_album, format_weather
 from .llm import send_ollama_request, send_ollama_image_request
 
 
@@ -176,7 +176,7 @@ def analyze_album_art(io_manager, album):
     coverart_bytes = base64.b64decode(album_details['coverart'])
     io_manager.save_coverart(coverart_bytes)
 
-    art_prompt = """Provide a detailed, factual description of the provided album cover art. Use three to five bullet points.
+    art_prompt = """Provide a detailed, factual description of the provided album cover art. Avoid any inference. Use three to five bullet points.
 
 Respond with only the description, no other text. Use markdown bullet points."""
 
@@ -231,9 +231,9 @@ def generate_greeting(io_manager, weather, literature, album):
             synthesis_prompt += "\nThe listener has NOT read the literature excerpt. Consider whether it has any distinctive structural or stylistic elements."
             
         if album:
-            synthesis_prompt += "\nThe listener has NOT seen or heard the album yet. Consider how one might connect it to the other materials."
+            synthesis_prompt += "\nThe listener has NOT seen or heard the album yet. Consider how one might connect its themes to the other materials."
 
-        synthesis_prompt += "\n\nAvoid references that are too specific or out of context, weave these elements into a unified vision.\n\nRespond with the final greeting only and no other text."
+        synthesis_prompt += "\n\nAvoid references that are too specific or out of context, weave these elements into a unified vision.\n\nRespond with the final greeting only and no other text, avoid enclosing quotes."
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt)

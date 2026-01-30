@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Daily Greeting Pipeline Runner
 
@@ -7,12 +6,11 @@ Executes the full multi-stage LLM pipeline for generating personalized wake-up m
 Stages:
 1. Weather data fetching
 2. Literature validation
-3. Jabberwocky word selection
-4. Album selection
-5. Album art analysis
-6. Synthesis layer
-7. TTS synthesis
-8. Playback server delivery
+3. Album selection
+4. Album art analysis
+5. Synthesis layer
+6. TTS synthesis
+7. Playback server delivery
 """
 
 import json
@@ -24,11 +22,9 @@ from generator.io_manager import IOManager, setup_logging
 from generator.data_sources import get_weather_data
 from generator.pipeline import (
     validate_literature,
-    select_words,
     select_album,
     analyze_album_art,
-    generate_greeting,
-    calculate_greeting_length
+    generate_greeting
 )
 from generator.llm import unload_all_models
 from generator.tts import synthesize_greeting, send_to_playback_server
@@ -51,8 +47,6 @@ def main():
         setup_logging(io_manager)
 
         logging.info("=== PIPELINE START ===")
-
-        greeting_length = calculate_greeting_length()
 
         try:
             # Stage 1: Weather data
@@ -86,7 +80,7 @@ def main():
 
             # Stage 5: Synthesis layer
             logging.info("Stage 6: Final greeting")
-            greeting = generate_greeting(io_manager, weather, literature, album, greeting_length)
+            greeting = generate_greeting(io_manager, weather, literature, album)
 
             if not greeting:
                 logging.error("Pipeline aborted: Final greeting generation failed")

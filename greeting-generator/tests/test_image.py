@@ -22,7 +22,7 @@ from generator.io_manager import IOManager, setup_logging
 from generator.pipeline import analyze_album_art
 
 # Date to load data from
-DATE = "2026-11-29"
+DATE = "2026-01-29"
 
 
 def main():
