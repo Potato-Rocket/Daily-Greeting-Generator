@@ -4,19 +4,19 @@
 
 # weather.gov API setup
 [weather]
-lat = 42.27
-lon = -71.81
+lat = 40.00
+lon = -75.00
 user_agent = DailyGreeting/1.0
 
 # Ollama server configuration
 [ollama]
-base_url = http://192.168.1.134:11434
-model = llama3.2:3b
-image_model = gemma3:4b
+base_url = http://localhost:11434
+model = mistral:7b
+image_model = llava:7b
 
 # Navidrome/Subsonic API configuration
 [navidrome]
-base_url = http://192.168.1.134:4533
+base_url = http://localhost:4533
 username = username
 password = password
 client_name = DailyGreeting
@@ -26,12 +26,6 @@ client_name = DailyGreeting
 length = 600
 padding = 2000
 
-# Greeting message length parameters (for lognormal distribution)
-[composition]
-mean_length = 140
-q1_length = 100
-min_length = 80
-
 # Playback server configuration
 [playback]
-server_url = http://192.168.1.36:7000
+server_url = http://localhost:7000

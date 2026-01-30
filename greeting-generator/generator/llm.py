@@ -11,7 +11,7 @@ import time
 
 # Ollama API configuration
 OLLAMA_BASE = "http://localhost:11434"
-MODEL = "llama3.2:3b"
+MODEL = "mistral:7b"
 IMAGE_MODEL = "llava:7b"
 
 

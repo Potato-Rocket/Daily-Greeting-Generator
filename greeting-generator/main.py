@@ -72,24 +72,19 @@ def main():
             if not literature:
                 logging.warning("Literature unavailable after 5 attempts, proceeding without literary data")
 
-            # Stage 3: Jabberwocky word selection
-            logging.info("Stage 3: Jabberwocky word selection")
-            select_words(io_manager, literature, greeting_length)
-            io_manager.update_data_file(literature=literature)
-
-            # Stage 4: Album selection
+            # Stage 3: Album selection
             logging.info("Stage 4: Album selection")
             album = select_album(io_manager, literature)
 
             if not album:
                 logging.warning("Album selection unavailable, proceeding without music data")
 
-            # Stage 5: Album art analysis
+            # Stage 4: Album art analysis
             logging.info("Stage 5: Album art analysis")
             analyze_album_art(io_manager, album)
             io_manager.update_data_file(album=album)
 
-            # Stage 6: Synthesis layer
+            # Stage 5: Synthesis layer
             logging.info("Stage 6: Final greeting")
             greeting = generate_greeting(io_manager, weather, literature, album, greeting_length)
 
@@ -101,7 +96,7 @@ def main():
             io_manager.update_data_file(greeting=greeting)
             logging.info("Greeting generated and saved")
 
-            # Stage 7: TTS synthesis
+            # Stage 6: TTS synthesis
             logging.info("Stage 7: TTS synthesis")
             # Clean up Ollama to save VRAM
             unload_all_models()

@@ -30,6 +30,8 @@ NAVIDROME_CLIENT = "DailyGreeting"
 LITERATURE_LENGTH = 600
 LITERATURE_PADDING = 2000
 
+TIMEOUT=30
+
 
 def get_weather_data():
     """
@@ -44,7 +46,7 @@ def get_weather_data():
 
         # Convert latitude and longitude to NWS grid coordinates
         points_url = f"https://api.weather.gov/points/{LAT},{LON}"
-        points_response = requests.get(points_url, headers={"User-Agent": USER_AGENT})
+        points_response = requests.get(points_url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
         logging.debug(f"Points API call took {time.time() - start_time:.2f}s")
 
         if points_response.status_code != 200:
@@ -58,7 +60,7 @@ def get_weather_data():
 
         # Fetch forecast data
         forecast_start = time.time()
-        forecast_response = requests.get(forecast_url, headers={"User-Agent": USER_AGENT})
+        forecast_response = requests.get(forecast_url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
         hourly_response = requests.get(forecast_hourly_url, headers={"User-Agent": USER_AGENT})
         logging.debug(f"Forecast API calls took {time.time() - forecast_start:.2f}s")
 
@@ -134,7 +136,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
         logging.info(f"Fetching literature from Gutendex (page {random_page})")
 
         api_url = f"https://gutendex.com/books/?languages=en&page={random_page}"
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Gutendex API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
@@ -168,7 +170,7 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
         logging.debug(f"Book ID {book_id}, URL: {text_url}")
 
         text_start = time.time()
-        text_response = requests.get(text_url, timeout=10)
+        text_response = requests.get(text_url, timeout=TIMEOUT)
         logging.debug(f"Book text download took {time.time() - text_start:.2f}s")
         if text_response.status_code != 200:
             logging.error(f"Failed to fetch book text (status {text_response.status_code})")
@@ -245,7 +247,7 @@ def get_navidrome_albums(count=5):
         logging.info(f"Fetching {count} random albums from Navidrome")
 
         api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&type=random&size={count}"
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Navidrome album list API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
@@ -289,7 +291,7 @@ def get_album_details(album_id):
         logging.info(f"Fetching album details (ID: {album_id})")
 
         api_url = f"{NAVIDROME_BASE}/rest/getAlbum.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&id={album_id}"
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Navidrome album details API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:

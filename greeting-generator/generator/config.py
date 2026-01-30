@@ -85,16 +85,4 @@ def apply_config(config_dict):
     if "literature.padding" in config_dict:
         data_sources.LITERATURE_PADDING = int(config_dict["literature.padding"])
 
-    # Composition configuration
-    if "composition.mean_length" in config_dict:
-        pipeline.MESSAGE_MEAN_LEN = int(config_dict["composition.mean_length"])
-    if "composition.q1_length" in config_dict:
-        pipeline.MESSAGE_Q1_LEN = int(config_dict["composition.q1_length"])
-    if "composition.min_length" in config_dict:
-        pipeline.MESSAGE_MIN_LEN = int(config_dict["composition.min_length"])
-
-    # TTS configuration
-    if "tts.length_scale" in config_dict:
-        tts.LENGTH_SCALE = float(config_dict["tts.length_scale"])
-
     logging.info(f"Applied {len(config_dict)} configuration overrides")

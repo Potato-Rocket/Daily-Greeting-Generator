@@ -22,7 +22,7 @@ from generator.io_manager import IOManager, setup_logging
 from generator.pipeline import generate_greeting
 
 # Date to load data from
-DATE = "2025-11-20"
+DATE = "2026-01-29"
 
 
 def main():
