@@ -6,7 +6,7 @@ and runs only the synthesis and composition stages. Useful for testing prompt ch
 without hitting external APIs.
 
 Usage:
-    python test_llm.py
+    python test_llm.py $(date +\"%Y-%m-%d\")
 """
 
 import sys
@@ -20,13 +20,16 @@ from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.pipeline import generate_greeting
 
-# Date to load data from
-DATE = "2026-01-29"
-
 
 def main():
     """Run the test pipeline using stored data."""
 
+    if len(sys.argv) > 1:
+        DATE = sys.argv[1]
+    else:
+        print("Error: No date specified!\n\nUsage:\n    python test_llm.py $(date +\"%Y-%m-%d\")")
+        sys.exit(1)
+    
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 

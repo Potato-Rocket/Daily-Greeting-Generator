@@ -5,7 +5,7 @@ Loads generated audio file and sends it to the playback server.
 Useful for testing the audio delivery endpoint without re-running the full pipeline.
 
 Usage:
-    python test_send.py
+    python test_send.py $(date +\"%Y-%m-%d\")
 """
 
 import sys
@@ -20,13 +20,16 @@ from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.tts import send_to_playback_server
 
-# Date to load data from
-DATE = "2025-10-26"
-
 
 def main():
     """Test sending audio to playback server using stored audio file."""
 
+    if len(sys.argv) > 1:
+        DATE = sys.argv[1]
+    else:
+        print("Error: No date specified!\n\nUsage:\n    python test_send.py $(date +\"%Y-%m-%d\")")
+        sys.exit(1)
+    
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 

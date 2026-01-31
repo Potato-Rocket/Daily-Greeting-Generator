@@ -1,8 +1,21 @@
 # Daily Greeting Generator
 
-An automated wake-up system that generates personalized morning messages by combining multiple data sources through a multi-stage LLM pipeline, then delivers them via text-to-speech at sunrise. Built with the aid of Claude Code, albeit with strong human supervision. Later revised and improved manually.
+An automated wake-up system that generates daily, personalized morning greeting messages by combining multiple data sources through a multi-stage LLM pipeline. The greeting is then delivered via text-to-speech at sunrise. Built with the aid of Claude Code, albeit with strong human supervision. Later revised and improved manually.
 
-### Structure
+While a simple recitation of the weather conditions as well as the day's obligations might be enough for some, others might prefer to begin their day with a bit more whimsy and unexpectedness. 
+
+### Pipeline
+
+1. **Weather** - Fetch from weather.gov API
+2. **Literature Validation** - Select random book from Gutendex API, uses LLM to evaluate potential of random excerpt (max 5 attempts)
+4. **Album Selection** - Select 1 of 5 random albums based on how it pairs with literature excerpt (using Ollama LLM)
+5. **Album Art Analysis** - Get album cover art and generate text description (using LLM)
+6. **Synthesis** - Compose morning greeting based on the weather, literature excerpt, and album info (using LLM)
+7. **TTS** - Generate audio with random Coqui XTTS-v2 speaker (GPU-accelerated)
+8. **Delivery** - Send to playback server with retry logic
+9. **Playback** - At dawn, plays a chime, the greeting, another chime, then begins playback of the selected album
+
+### Modules
 
 This project is divided into three separate modules, each of which can function independently of the other two:
 
@@ -14,9 +27,11 @@ The core of the system lies in the generator script. In future iterations, the g
 
 ### Dependencies
 
-- Access to an Ollama server instance with visual and text-only models available.
+- Access to an Ollama server instance with visual models available.
 - Access to a music server implementing the Subsonic API. I highly recommend Navidrome for its simplicity.
 - An instance of an mpc compatible music playback server running on the same machine as the greeting playback server and the notifications script.
+
+If any external API requests fail
 
 ## Greeting Generator
 
@@ -24,17 +39,6 @@ The core of the system lies in the generator script. In future iterations, the g
 1. **Weather data** from weather.gov API (overnight, sunrise, and daily forecasts)
 2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
 3. **Music metadata** from Navidrome server (selects 1 of 5 random albums, fetches details for chosen album)
-
-### Generation Pipeline
-
-1. **Weather** - Fetch from weather.gov API
-2. **Literature Validation** - Get random excerpt (max 5 attempts, evaluate "interesting material")
-4. **Album Selection** - Choose 1 from 5 random albums (pairs with literature or standalone)
-5. **Album Art Analysis** - Check for default cover, analyze custom art with vision model
-6. **Synthesis** - Compose greeting with structured REASONING + GREETING output
-7. **TTS** - Generate audio with random Coqui XTTS-v2 speaker (GPU-accelerated)
-8. **Delivery** - Send to playback server with retry logic
-9. **Playback** - Wind chime → greeting → wind chime at sunrise
 
 ### Setup
 
@@ -45,21 +49,28 @@ cd greeting-generator && conda activate coqui && python main.py
 
 **Test specific stages:**
 ```bash
-cd greeting-generator
+cd greeting-generator/tests
 conda activate coqui
-# Test synthesis only (uses existing data)
-python tests/test_llm.py
 
-# Test TTS synthesis only (uses existing greeting text)
-python tests/test_tts.py
+# Test coverart description only (uses already saved coverart)
+python test_album.py $(date +\"%Y-%m-%d\")
+
+# Test album details fetching and coverart description only (uses existing album selection)
+python test_album.py $(date +\"%Y-%m-%d\")
+
+# Test synthesis only (using already generated data)
+python test_llm.py $(date +\"%Y-%m-%d\")
 
 # Test audio delivery only (uses existing WAV file)
-python tests/test_send.py
+python test_send.py $(date +\"%Y-%m-%d\")
+
+# Test TTS synthesis only (uses existing greeting text)
+python test_tts.py $(date +\"%Y-%m-%d\")
 ```
 
 **Deploy to server:**
 ```bash
-cd greeting-generator && ./deploy.sh  # Copies code and environment.yml, excludes __pycache__
+cd greeting-generator && ./deploy.sh    # Copies code and environment.yml
 ```
 
 **Setup (run once after deployment):**
@@ -107,7 +118,7 @@ Copy from `config.ini.example` and customize:
 
 **Deploy to playback server:**
 ```bash
-cd greeting-playback && ./deploy.sh
+cd greeting-playback && ./deploy.sh 
 ```
 
 **Setup (run once after deployment):**

@@ -7,7 +7,7 @@ model analysis. Useful for testing image analysis prompts without re-running
 the full pipeline.
 
 Usage:
-    python test_image.py
+    python test_image.py $(date +\"%Y-%m-%d\")
 """
 
 import sys
@@ -21,13 +21,16 @@ from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.pipeline import analyze_album_art
 
-# Date to load data from
-DATE = "2026-01-29"
-
 
 def main():
     """Run album art analysis test using stored album data."""
 
+    if len(sys.argv) > 1:
+        DATE = sys.argv[1]
+    else:
+        print("Error: No date specified!\n\nUsage:\n    python test_image.py $(date +\"%Y-%m-%d\")")
+        sys.exit(1)
+    
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 

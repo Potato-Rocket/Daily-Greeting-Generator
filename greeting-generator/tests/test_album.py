@@ -6,7 +6,7 @@ including tracklist and cover art from Navidrome. Useful for testing album
 details fetching and cover art analysis without re-running the full pipeline.
 
 Usage:
-    python test_album.py
+    python test_album.py $(date +\"%Y-%m-%d\")
 """
 
 import sys
@@ -21,12 +21,15 @@ from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.data_sources import get_album_details
 
-# Date to load data from
-DATE = "2025-10-26"
-
 
 def main():
     """Run album details fetch test using stored album ID."""
+
+    if len(sys.argv) > 1:
+        DATE = sys.argv[1]
+    else:
+        print("Error: No date specified!\n\nUsage:\n    python test_album.py $(date +\"%Y-%m-%d\")")
+        sys.exit(1)
 
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')

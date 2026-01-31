@@ -231,7 +231,7 @@ def generate_greeting(io_manager, weather, literature, album):
             synthesis_prompt += "\nThe listener has NOT read the literature excerpt. Consider whether it has any distinctive structural or stylistic elements."
             
         if album:
-            synthesis_prompt += "\nThe listener has NOT seen or heard the album yet. Consider how one might connect its themes to the other materials."
+            synthesis_prompt += "\nThe listener has NOT seen or heard the album yet. Consider the vibes it might cultivate."
 
         synthesis_prompt += "\n\nAvoid references that are too specific or out of context, weave these elements into a unified vision.\n\nRespond with the final greeting only and no other text, avoid enclosing quotes."
     

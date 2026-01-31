@@ -6,7 +6,7 @@ to audio using Coqui XTTS-v2. Useful for testing TTS changes without re-running
 the full pipeline.
 
 Usage:
-    python test_tts.py
+    python test_tts.py $(date +\"%Y-%m-%d\")
 """
 
 import sys
@@ -20,13 +20,16 @@ from generator.config import load_config, apply_config
 from generator.io_manager import IOManager, setup_logging
 from generator.tts import synthesize_greeting
 
-# Date to load data from
-DATE = "2025-10-26"
-
 
 def main():
     """Run TTS synthesis test using stored greeting text."""
 
+    if len(sys.argv) > 1:
+        DATE = sys.argv[1]
+    else:
+        print("Error: No date specified!\n\nUsage:\n    python test_tts.py $(date +\"%Y-%m-%d\")")
+        sys.exit(1)
+    
     # Setup basic logging first
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
