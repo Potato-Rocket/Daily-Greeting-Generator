@@ -23,7 +23,7 @@ if [ ! -f "$BASE_DIR/config.ini" ]; then
     echo "   - Weather coordinates"
     echo "   - Ollama server URL and models"
     echo "   - Navidrome credentials"
-    echo "   - TTS model path"
+    echo "   - Playback server URL"
     echo ""
 else
     echo "config.ini already exists, skipping..."

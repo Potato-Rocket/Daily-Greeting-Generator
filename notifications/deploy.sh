@@ -1,5 +1,19 @@
-SERVER="oscar@fitPC3-music-player"
-REMOTE_PATH="/home/oscar/notifications"
+#!/bin/bash
+# Deploy notification chime component to playback server
+
+set -e
+
+if [ $1 ]; then
+    SERVER=$1
+    echo "Host is $SERVER"
+else
+    echo "Host must be specified!"
+    echo ""
+    echo "Example usage:"
+    echo "    ./deploy.sh user@host"
+    exit 1
+fi
+REMOTE_PATH="~/notifications"
 
 echo "Deploying notification script to $SERVER:$REMOTE_PATH"
 

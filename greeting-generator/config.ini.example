@@ -4,8 +4,8 @@
 
 # weather.gov API setup
 [weather]
-lat = 40.00
-lon = -75.00
+lat = 0.00
+lon = 0.00
 user_agent = DailyGreeting/1.0
 
 # Ollama server configuration

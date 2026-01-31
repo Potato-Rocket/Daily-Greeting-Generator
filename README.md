@@ -2,26 +2,33 @@
 
 An automated wake-up system that generates personalized morning messages by combining multiple data sources through a multi-stage LLM pipeline, then delivers them via text-to-speech at sunrise. Built with the aid of Claude Code, albeit with strong human supervision. Later revised and improved manually.
 
-## Structure
+### Structure
 
-This project is divided into three separate modules:
+This project is divided into three separate modules, each of which can function independently of the other two:
 
-- **Greeting Generator**, the Python script which makes the required API requests, runs the LLM and TTS pipeline, then sends the generated greeting to the playback server.
-- **Greeting Playback**, the Python server which recieves the generated greeting, calculates the next sunrise, and plays the morning wake up call on schedule.
-- **Notifications**, a simple Python script which plays back a chime of a random tune.
+- **Greeting Generator**, the Python script which makes the required API requests, runs the LLM and TTS pipeline, then sends the generated greeting to the playback server. Should be scheduled as an early morning cron job on a machine with GPU resources for TTS acceleration.
+- **Greeting Playback**, the Python server which recieves the generated greeting, calculates the next sunrise, and plays the morning wake up call on schedule. Should be running on a machine with audio output.
+- **Notifications**, a simple Python script which plays back a chime of a random tune. Should be set up on the same machine as the greeting playback server.
 
-The core of the system lies in the generator script. In future iterations, the greeting playback and notifications modules will be replaces with Home Assistant automation.
+The core of the system lies in the generator script. In future iterations, the greeting playback and notifications modules will likely be replaced with Home Assistant automation.
+
+### Dependencies
+
+- Access to an Ollama server instance with visual and text-only models available.
+- Access to a music server implementing the Subsonic API. I highly recommend Navidrome for its simplicity.
+- An instance of an mpc compatible music playback server running on the same machine as the greeting playback server and the notifications script.
+
+## Greeting Generator
 
 ### Data Sources
 1. **Weather data** from weather.gov API (overnight, sunrise, and daily forecasts)
 2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
-3. **Music metadata** from Navidrome server (5 random albums → curated selection)
+3. **Music metadata** from Navidrome server (selects 1 of 5 random albums, fetches details for chosen album)
 
-### Pipeline Flow
+### Generation Pipeline
 
 1. **Weather** - Fetch from weather.gov API
-2. **Literature Validation** - Validate random excerpt (max 5 attempts, evaluate "interesting material")
-3. **Jabberwocky Word Selection** - Generate 3× candidate words, LLM selects subset based on literature style
+2. **Literature Validation** - Get random excerpt (max 5 attempts, evaluate "interesting material")
 4. **Album Selection** - Choose 1 from 5 random albums (pairs with literature or standalone)
 5. **Album Art Analysis** - Check for default cover, analyze custom art with vision model
 6. **Synthesis** - Compose greeting with structured REASONING + GREETING output
@@ -29,15 +36,7 @@ The core of the system lies in the generator script. In future iterations, the g
 8. **Delivery** - Send to playback server with retry logic
 9. **Playback** - Wind chime → greeting → wind chime at sunrise
 
-### Delivery Architecture
-- **Generation server** (home server, i7/GTX1650): Runs at 2am daily via cron, generates greeting, renders via Coqui XTTS-v2 with GPU acceleration (conda environment), sends to playback server with retry logic
-- **Playback server** (FitPC3 music server): Flask service receives audio on port 7000, calculates sunrise time, stores schedule file
-- **Sunrise playback**: Bash script (`check_sunrise.sh`) checks every 5 minutes via cron, plays random chime, then greeting through room speakers using `aplay -Dplug:default` for automatic mono-to-stereo conversion, sets volume to 100% before playback, plays another chime after completion
-- **Notification system**: Separate `notifications/` module with wind chime sounds and playback script, shared between greeting system and future notification features
-
-## Commands
-
-### Generator (greeting-generator/)
+### Setup
 
 **Run pipeline manually:**
 ```bash
@@ -77,8 +76,34 @@ tail -f data/$(date +%Y-%m-%d)/log_$(date +%Y-%m-%d).txt
 # View today's pipeline trace (LLM prompts/responses)
 less data/$(date +%Y-%m-%d)/pipeline_$(date +%Y-%m-%d).txt
 ```
+### Configuration
 
-### Playback (greeting-playback/)
+Copy from `config.ini.example` and customize:
+
+**[weather]**
+- `lat`, `lon` - Coordinates for weather.gov API
+- `user_agent` - Custom user agent string
+
+**[ollama]**
+- `base_url` - Ollama server URL
+- `model` - Text model (e.g., `mistral:7b`)
+- `image_model` - Vision model (e.g., `llama3.2-vision:11b`)
+
+**[navidrome]**
+- `base_url`, `username`, `password`, `client_name` - Subsonic API credentials
+
+**[literature]**
+- `length` - Excerpt length in characters
+- `padding` - Additional buffer for excerpt selection
+
+**[composition]**
+- `mean_length`, `q1_length`, `min_length` - Greeting length parameters (lognormal distribution)
+
+**[playback]**
+- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000`)
+
+
+## Greeting Playback
 
 **Deploy to playback server:**
 ```bash
@@ -118,7 +143,7 @@ date -d @$(cat /home/oscar/greeting-playback/data/.playback_schedule)
 aplay -Dplug:default /home/oscar/greeting-playback/data/greeting.wav
 ```
 
-### Notifications (notifications/)
+## Notifications
 
 **Deploy notification system:**
 ```bash
@@ -131,35 +156,7 @@ cd notifications && ./deploy.sh  # Deploys wind chimes and playback script to Fi
 python3 /home/oscar/notifications/play_chime.py
 ```
 
-## Configuration
-
-### Generator Configuration (`greeting-generator/config.ini`)
-
-Copy from `config.ini.example` and customize:
-
-**[weather]**
-- `lat`, `lon` - Coordinates for weather.gov API
-- `user_agent` - Custom user agent string
-
-**[ollama]**
-- `base_url` - Ollama server URL
-- `model` - Text model (e.g., `mistral:7b`)
-- `image_model` - Vision model (e.g., `llama3.2-vision:11b`)
-
-**[navidrome]**
-- `base_url`, `username`, `password`, `client_name` - Subsonic API credentials
-
-**[literature]**
-- `length` - Excerpt length in characters
-- `padding` - Additional buffer for excerpt selection
-
-**[composition]**
-- `mean_length`, `q1_length`, `min_length` - Greeting length parameters (lognormal distribution)
-
-**[playback]**
-- `server_url` - Playback server endpoint (e.g., `http://192.168.1.36:7000`)
-
-### Playback Configuration (`greeting-playback/config.ini`)
+### Configuration
 
 Copy from `config.ini.example` and customize:
 

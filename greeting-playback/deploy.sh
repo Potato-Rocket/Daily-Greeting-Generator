@@ -1,11 +1,21 @@
 #!/bin/bash
-# Deploy playback server components to music server (FitPC3)
+# Deploy playback server components to music server
 # Updates playback scripts while preserving config and data
 
 set -e
 
-SERVER="oscar@fitPC3-music-player"
-REMOTE_PATH="/home/oscar/daily-greeting"
+if [ $1 ]; then
+    SERVER=$1
+    echo "Host is $SERVER"
+else
+    echo "Host must be specified!"
+    echo ""
+    echo "Example usage:"
+    echo "    ./deploy.sh user@host"
+    exit 1
+fi
+
+REMOTE_PATH="~/daily-greeting"
 
 echo "Deploying playback server to $SERVER:$REMOTE_PATH"
 
@@ -26,7 +36,7 @@ scp check_sunrise.sh \
 echo "Deployment complete!"
 echo ""
 echo "Next steps:"
-echo "1. SSH to server: ssh $SERVER"
-echo "2. cd $REMOTE_PATH"
-echo "3. Run setup (first time only): ./setup.sh"
-echo "4. Edit config: vim config.ini"
+echo "    ssh $SERVER  # SSH to server"
+echo "    cd $REMOTE_PATH  # enter program directory"
+echo "    ./setup.sh  # execute the setup script (first time only)"
+echo "    vim config.ini  # edit the config file"
