@@ -15,6 +15,7 @@ MODEL = "mistral:7b"
 IMAGE_MODEL = "llava:7b"
 
 
+# TODO: Replace custom API callse with official SDK
 def send_ollama_request(prompt):
     """
     Send a prompt to the Ollama API and return the response text.

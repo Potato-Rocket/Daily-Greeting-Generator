@@ -5,8 +5,7 @@ Multi-stage LLM pipeline:
 1. Literature validation (with retry logic)
 2. Album selection (from 5 random albums)
 3. Album art analysis (default check + vision description)
-4. Synthesis layer (extract themes, mood, sensory anchors)
-5. Composition layer (transform to wake-up message)
+4. Composition layer (transform to wake-up message)
 """
 
 import re

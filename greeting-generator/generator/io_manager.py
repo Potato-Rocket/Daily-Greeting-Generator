@@ -2,10 +2,11 @@
 I/O Management for Daily Greeting Generator
 
 Handles all file operations including:
-- Dated directory structure in ./tmp/{YYYY-MM-DD}/
+- Dated directory structure in ./data/{YYYY-MM-DD}/
 - Pipeline output logging (prompts and responses)
 - Timestamped execution logs
 - Incremental data saving (JSON)
+- Saving and loading the selected book text
 - Greeting text output
 - Album cover art saving
 """

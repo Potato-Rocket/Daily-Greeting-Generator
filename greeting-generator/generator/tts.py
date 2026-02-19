@@ -15,7 +15,7 @@ from TTS.api import TTS
 # Playback server address
 SERVER_ADDR = "http://100.92.176.128:7000"
 
-
+# TODO: Replace with piper-TTS for better efficiency
 def synthesize_greeting(text, io_manager):
     """
     Convert greeting text to speech using Coqui TTS voice cloning and save as WAV file.
@@ -68,6 +68,7 @@ def synthesize_greeting(text, io_manager):
         return None
 
 
+# TODO: Replace with Home Assistant + Music Assistant API and automation
 def send_to_playback_server(audio_path, album, max_retries=5):
     """
     Send audio file and album song URLs to playback server via HTTP POST with retry logic.
