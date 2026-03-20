@@ -10,8 +10,8 @@ import time
 
 # Ollama API configuration
 OLLAMA_BASE = "http://localhost:11434"
-MODEL = "qwen3.5"
-IMAGE_MODEL = "gemma3:4b"
+MODEL = "mistral:7b"
+IMAGE_MODEL = "llava:7b"
 
 
 # TODO: Replace custom API callse with official SDK

@@ -38,9 +38,9 @@ class IOManager:
 
         # Ensure correct subdirectories exist
         self.data_dir = self.base_dir / "data" / self.date_str
-        self.data_dir.mkdir(exist_ok=True)
+        self.data_dir.mkdir(exist_ok=True, parents=True)
         self.model_dir = self.base_dir / "models"
-        self.model_dir.mkdir(exist_ok=True)
+        self.model_dir.mkdir(exist_ok=True, parents=True)
 
         # Pipeline output file handle
         self.pipeline_file = None

@@ -36,7 +36,8 @@ def main():
     # Setup basic logging first (will be reconfigured after IOManager init)
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-    base_dir = Path(__file__).parent
+    # base_dir = Path(__file__).parent
+    base_dir = Path("/")
 
     # Load configuration overrides
     config = load_config(base_dir)

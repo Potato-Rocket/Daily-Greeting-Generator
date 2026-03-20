@@ -16,8 +16,8 @@ import logging
 import time
 
 # Weather.gov API configuration
-LAT = 42.27
-LON = -71.81
+LAT = 0.0
+LON = 0.0
 USER_AGENT = "DailyGreeting/1.0"
 
 # Navidrome server configuration

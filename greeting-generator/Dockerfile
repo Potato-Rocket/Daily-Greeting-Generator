@@ -5,15 +5,13 @@ WORKDIR /usr/src/app
 COPY config.ini.example /config/config.ini
 
 # Python files
-COPY requirements.txt main.py
+COPY requirements.txt main.py ./
 COPY generator/ ./generator/
 
 # Install Python requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download default model for Piper TTS
+# Bundle default model for Piper TTS
 RUN python -m piper.download_voices --download-dir /models/ en_US-lessac-high
-
-EXPOSE 7000
 
 CMD [ "python", "main.py" ]
