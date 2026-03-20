@@ -21,6 +21,8 @@ While a simple recitation of the weather conditions as well as the day's obligat
 2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
 3. **Music metadata** from Navidrome server (selects 1 of 5 random albums, fetches details and describes album art for chosen album)
 
+TODO: Generate and show example
+
 ### Modules
 
 This project is divided into three separate modules, each of which can function semi-independently of the other two:

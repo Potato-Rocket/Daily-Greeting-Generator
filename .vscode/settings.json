@@ -1,0 +1,4 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/greeting-generator/.venv/bin/python",
+    "python-envs.defaultPackageManager": "ms-python.python:pip"
+}
