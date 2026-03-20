@@ -46,6 +46,11 @@ docker tag "${IMAGE_NAME}:dev" "${DOCKER_USER}/${IMAGE_NAME}:latest"
 docker push "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
 docker push "${DOCKER_USER}/${IMAGE_NAME}:latest"
 
+echo "Cleaning up..."
+
+docker image rm "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
+docker image rm "${DOCKER_USER}/${IMAGE_NAME}:latest"
+
 echo ""
 echo "Released v${VERSION} successfully"
 echo "  Git: v${VERSION}"
