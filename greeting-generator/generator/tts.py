@@ -7,13 +7,13 @@ Handles audio rendering using Coqui TTS and delivery to playback server.
 import logging
 import time
 import random
-import torch
 import requests
 from pathlib import Path
-from TTS.api import TTS
+import wave
+from piper import PiperVoice, download_voices
 
 # Playback server address
-SERVER_ADDR = "http://100.92.176.128:7000"
+SERVER_ADDR = "http://localhost:7000"
 
 # TODO: Replace with piper-TTS for better efficiency
 def synthesize_greeting(text, io_manager):
@@ -33,31 +33,30 @@ def synthesize_greeting(text, io_manager):
     output_path = io_manager.data_dir / f"greeting_{io_manager.date_str}.wav"
 
     try:
-        logging.info("Initializing Coqui TTS with XTTS-v2 model")
+        logging.info("Initializing piper")
 
-        # Initialize TTS with GPU if available
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        logging.info(f"Using device: {device}")
+        # Glob for model files in the models directory
+        logging.info("Searching for models")
+        model_dir = Path(io_manager.model_dir)
+        models = [m for m in model_dir.glob("*.onnx") if (m.with_suffix(".onnx.json")).exists()]
 
-        if device == "cuda":
-            gpu_name = torch.cuda.get_device_name(0)
-            logging.info(f"GPU detected: {gpu_name}")
+        # Ensure at least one valid model is present
+        if not models:
+            logging.warning("No valid models found, downloading default model")
+            download_voices.download_voice("en_US-lessac-high", model_dir, force_redownload=True)
+            models = [m for m in model_dir.glob("*.onnx") if (m.with_suffix(".onnx.json")).exists()]
 
-        tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-        logging.debug(f"Speaker options: {tts.speakers}")
-        speaker = random.choice(tts.speakers)
-        logging.info(f"Selected random speaker: {speaker}")
+        logging.debug(f"Speaker options:\n- {chr(10).join(m.stem for m in models)}")
+        speaker = random.choice(models)
+        logging.info(f"Selected random speaker: {speaker.stem}")
 
         logging.info(f"Synthesizing greeting to {output_path}")
         start_time = time.time()
 
-        # Synthesize with voice cloning (pass all clips as list)
-        tts.tts_to_file(
-            text=text,
-            speaker=speaker,
-            language="en",
-            file_path=str(output_path)
-        )
+        # Synthesize with Piper TTS
+        voice = PiperVoice.load(speaker)
+        with wave.open(str(output_path), "wb") as wav_file:
+            voice.synthesize_wav(text, wav_file)
 
         elapsed = time.time() - start_time
         logging.info(f"TTS synthesis complete ({elapsed:.2f}s)")
