@@ -9,7 +9,6 @@ Multi-stage LLM pipeline:
 """
 
 import re
-import math
 import base64
 import random
 import logging
@@ -250,8 +249,5 @@ def generate_greeting(io_manager, weather, literature, album):
 
     logging.debug(f"Generated {len(final_greeting.split())} words")
     logging.info("Synthesis layer complete")
-
-    if not literature.get('jabberwocky'):
-        return final_greeting
 
     return final_greeting

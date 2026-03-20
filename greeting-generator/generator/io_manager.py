@@ -33,11 +33,14 @@ class IOManager:
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(exist_ok=True)
 
-        # Create dated subdirectory
+        # Create date string
         self.date_str = date_str if date_str else datetime.now().strftime(r"%Y-%m-%d")
 
+        # Ensure correct subdirectories exist
         self.data_dir = self.base_dir / "data" / self.date_str
         self.data_dir.mkdir(exist_ok=True)
+        self.model_dir = self.base_dir / "models"
+        self.model_dir.mkdir(exist_ok=True)
 
         # Pipeline output file handle
         self.pipeline_file = None
