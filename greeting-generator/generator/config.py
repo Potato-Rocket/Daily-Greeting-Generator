@@ -19,7 +19,7 @@ def load_config(base_dir):
     Returns:
         dict: Configuration values as {"section.key": "value"}, or empty dict if no config file
     """
-    config_path = Path(base_dir) / "config.ini"
+    config_path = Path(base_dir) / "config" / "config.ini"
 
     if not config_path.exists():
         return {}

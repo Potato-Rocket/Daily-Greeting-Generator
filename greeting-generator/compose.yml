@@ -1,0 +1,12 @@
+services:
+  generator:
+    image: daily-greeting:dev
+    build: .
+    volumes:
+      - ./data:/data
+      - ./config.ini:/config/config.ini
+      - greeting-models:/models
+    network_mode: host
+ 
+volumes:
+  greeting-models:
