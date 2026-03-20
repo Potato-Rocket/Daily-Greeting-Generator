@@ -41,8 +41,8 @@ echo "Building Docker image..."
 docker compose build
 
 echo "Pushing to Docker Hub..."
-docker tag "${IMAGE_NAME}:dev "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
-docker tag "${IMAGE_NAME}:dev "${DOCKER_USER}/${IMAGE_NAME}:latest"
+docker tag "${IMAGE_NAME}:dev" "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
+docker tag "${IMAGE_NAME}:dev" "${DOCKER_USER}/${IMAGE_NAME}:latest"
 docker push "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
 docker push "${DOCKER_USER}/${IMAGE_NAME}:latest"
 
