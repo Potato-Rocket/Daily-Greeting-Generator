@@ -7,7 +7,6 @@ Handles audio rendering using Coqui TTS and delivery to playback server.
 import logging
 import time
 import random
-from pathlib import Path
 import wave
 from piper import PiperVoice, download_voices
 

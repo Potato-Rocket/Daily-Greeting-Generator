@@ -11,18 +11,18 @@ Minimum to get off conda and into Docker, keeping everything else the same.
 ## Phase 2 — Flask API
 Replace cron-triggered script with persistent service.
 - ~~Move pipeline orchestration from `main.py` → `generator/orchestrator.py`~~
-- `main.py` becomes Flask server:
+- ~~`main.py` becomes Flask server:~~
   - ~~`POST /generate` — blocking, deduplicated (lock + check)~~
-  - `GET /greeting?fallback=fail|last|random` — returns metadata JSON
-  - `GET /audio/<date>` — returns WAV
+  - ~~`GET /greeting?fallback=fail|last|random` — returns metadata JSON~~
+  - ~~`GET /audio/<date>` — returns WAV~~
 - `cli.py` for local testing, calls same orchestrator
-- Update Dockerfile to `EXPOSE` port
+- ~~Update Dockerfile to `EXPOSE` port~~
 
 ## Phase 3 — Publish & Deploy
-Replace `deploy.sh` + `scp` with container registry.
-- Push to Docker Hub or ghcr.io
-- `docker-compose.yml` with env file, config mount, model volume
-- `docker pull && docker compose up` on target machine
+~~Replace `deploy.sh` + `scp` with container registry.~~
+- ~~Push to Docker Hub or ghcr.io~~
+- ~~`docker-compose.yml` with env file, config mount, model volume~~
+- ~~`docker pull && docker compose up` on target machine~~
 
 ## Phase 4 — Home Assistant Integration
 HA orchestrates scheduling and playback, replacing playback server.

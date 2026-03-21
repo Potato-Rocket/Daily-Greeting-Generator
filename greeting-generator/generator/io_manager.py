@@ -22,9 +22,26 @@ from .llm import MODEL, IMAGE_MODEL
 
 BASE_DIR = Path("/")
 LOG_LEVEL = logging.INFO
+LOG_FMT = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
 
 
-class Fallback(Enum):
+def setup_logging(log_path=None):
+    """Configure logging to console, and optionally to a file."""
+    root_logger = logging.getLogger()
+    root_logger.setLevel(LOG_LEVEL)
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(LOG_FMT)
+    root_logger.addHandler(console_handler)
+    if log_path:
+        file_handler = logging.FileHandler(log_path, mode='a')
+        file_handler.setFormatter(LOG_FMT)
+        root_logger.addHandler(file_handler)
+        logging.info(f"Logging to {log_path}")
+
+
+class Mode(Enum):
     FAIL = "fail"
     FIRST = "first"
     LAST = "last"
@@ -63,30 +80,39 @@ class PathManager:
         )
 
 
-def get_paths(date_str, mode=Fallback.FAIL):
+def get_paths(date_str, fallback=Mode.FAIL):
+    try:
+        date_str = Mode(date_str)
+    except ValueError:
+        pass  # literal date string
+
     date_strs = [d.name for d in PathManager.data_dir.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
     valid_strs = [d for d in date_strs if PathManager(d).is_valid()]
     valid_strs.sort()
 
     if not valid_strs:
         logging.error("No valid data paths found!")
-        return None
-    
+        return None, "No valid greetings found"
+
     match date_str:
-        case Fallback.FIRST:
-            return PathManager(valid_strs[0])
-        case Fallback.LAST:
-            return PathManager(valid_strs[-1])
-        case Fallback.RANDOM:
-            return PathManager(random.choice(valid_strs))
+        case Mode.FIRST:
+            logging.info("Fetching first valid date")
+            return PathManager(valid_strs[0]), None
+        case Mode.LAST:
+            logging.info("Fetching last valid date")
+            return PathManager(valid_strs[-1]), None
+        case Mode.RANDOM:
+            logging.info("Fetching random valid date")
+            return PathManager(random.choice(valid_strs)), None
         case _:
             if date_str in valid_strs:
-                return PathManager(date_str)
-            elif mode == Fallback.FAIL:
-                logging.error("Specified data path was not valid!")
-                return None
+                return PathManager(date_str), None
+            elif fallback == Mode.FAIL:
+                logging.error("Specified date or mode was not valid!")
+                return None, f"No greeting found for {date_str}"
             else:
-                return get_paths(mode)
+                logging.warning("Specified date was not valid, using fallback")
+                return get_paths(fallback)
 
 
 class IOManager:
@@ -234,35 +260,15 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
             return None
 
     def close(self):
-        """Close the pipeline file handle."""
+        """Close pipeline file and reset logging to console only."""
         if self.pipeline_file:
             self.pipeline_file.close()
             self.pipeline_file = None
-
-    def setup_logging(self):
-        """Configure logging with timestamped file and console output."""
-        root_logger = logging.getLogger()
-        root_logger.setLevel(LOG_LEVEL)
-
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
-
-        fmt = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
-
-        file_handler = logging.FileHandler(self.paths.log_path, mode='a')
-        file_handler.setFormatter(fmt)
-
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(fmt)
-
-        root_logger.addHandler(file_handler)
-        root_logger.addHandler(console_handler)
-
-        logging.info(f"Logging to {self.paths.log_path}")
+        setup_logging()
 
     def __enter__(self):
         """Context manager entry - configure logging and initialize pipeline file."""
-        self.setup_logging()
+        setup_logging(self.paths.log_path)
         self.init_pipeline_file()
         return self
 

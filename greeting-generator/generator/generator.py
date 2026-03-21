@@ -25,11 +25,7 @@ def run_pipeline():
     4. Album art analysisYEs,
     5. Synthesis layer
     6. TTS synthesis
-    7. Playback server delivery
     """
-
-    # Setup basic logging first (will be reconfigured after IOManager init)
-    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
     # Load configuration overrides
     config = load_config()
