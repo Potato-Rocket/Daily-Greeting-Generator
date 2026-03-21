@@ -14,4 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Bundle default model for Piper TTS
 RUN python -m piper.download_voices --download-dir /models/ en_US-lessac-high
 
+EXPOSE 5000
+
 CMD [ "python", "main.py" ]

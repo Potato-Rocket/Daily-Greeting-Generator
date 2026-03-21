@@ -4,9 +4,9 @@ Each phase ends with something that runs end-to-end.
 
 ## Phase 1 — Containerized Generator
 Minimum to get off conda and into Docker, keeping everything else the same.
-- Swap Coqui for Piper in `tts.py`
-- Write Dockerfile (`python:3-slim`, bundled Piper voice)
-- Verify: `docker build && docker run` generates and delivers a greeting
+- ~~Swap Coqui for Piper in `tts.py`~~
+- ~~Write Dockerfile (`python:3-slim`, bundled Piper voice)~~
+- ~~Verify: `docker build && docker run` generates and delivers a greeting~~
 
 ## Phase 2 — Flask API
 Replace cron-triggered script with persistent service.
