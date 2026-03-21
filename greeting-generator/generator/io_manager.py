@@ -13,6 +13,7 @@ Handles all file operations including:
 
 import json
 import logging
+import random
 from enum import Enum
 from pathlib import Path
 from datetime import datetime
@@ -30,44 +31,82 @@ class Fallback(Enum):
     RANDOM = "random"
 
 
+def _today() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+class PathManager:
+    """Pure path computation for a given date. No side effects."""
+    
+    model_dir = BASE_DIR / "models"
+    data_dir  = BASE_DIR / "data"
+
+    def __init__(self, date_str):
+        self.date_str      = date_str
+
+        # Directories
+        self.date_dir      = PathManager.data_dir / date_str
+
+        # File paths
+        self.data_path     = self.date_dir / f"data_{date_str}.json"
+        self.audio_path    = self.date_dir / f"greeting_{date_str}.wav"
+        self.greeting_path = self.date_dir / f"greeting_{date_str}.txt"
+        self.book_path     = self.date_dir / f"book_{date_str}.txt"
+        self.coverart_path = self.date_dir / f"coverart_{date_str}.jpg"
+        self.log_path      = self.date_dir / f"log_{date_str}.txt"
+        self.pipeline_path = self.date_dir / f"pipeline_{date_str}.txt"
+    
+    def is_valid(self):
+        return (
+            self.data_path.exists() and
+            self.audio_path.exists()
+        )
+
+
+def get_paths(date_str, mode=Fallback.FAIL):
+    date_strs = [d.name for d in PathManager.data_dir.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
+    valid_strs = [d for d in date_strs if PathManager(d).is_valid()]
+    valid_strs.sort()
+
+    if not valid_strs:
+        logging.error("No valid data paths found!")
+        return None
+    
+    match date_str:
+        case Fallback.FIRST:
+            return PathManager(valid_strs[0])
+        case Fallback.LAST:
+            return PathManager(valid_strs[-1])
+        case Fallback.RANDOM:
+            return PathManager(random.choice(valid_strs))
+        case _:
+            if date_str in valid_strs:
+                return PathManager(date_str)
+            elif mode == Fallback.FAIL:
+                logging.error("Specified data path was not valid!")
+                return None
+            else:
+                return get_paths(mode)
+
+
 class IOManager:
     """Manages all file I/O for pipeline execution."""
 
-    def __init__(self, date_str=None):
-        """
-        Initialize IOManager with dated subdirectory.
+    def __init__(self, paths=None):
+        self.paths = paths or PathManager(_today())
 
-        Args:
-            date_str: Optional date string (YYYY-MM-DD). If None, uses today's date.
-        """
+        # Ensure directories exist
         BASE_DIR.mkdir(exist_ok=True)
+        self.paths.date_dir.mkdir(exist_ok=True, parents=True)
+        self.paths.model_dir.mkdir(exist_ok=True, parents=True)
 
-        # Create date string
-        self.date_str = date_str if date_str else datetime.now().strftime(r"%Y-%m-%d")
-
-        # Directories
-        self.data_dir = BASE_DIR / "data" / self.date_str
-        self.data_dir.mkdir(exist_ok=True, parents=True)
-        self.model_dir = BASE_DIR / "models"
-        self.model_dir.mkdir(exist_ok=True, parents=True)
-
-        # File paths
-        self.data_path     = self.data_dir / f"data_{self.date_str}.json"
-        self.audio_path    = self.data_dir / f"greeting_{self.date_str}.wav"
-        self.greeting_path = self.data_dir / f"greeting_{self.date_str}.txt"
-        self.book_path     = self.data_dir / f"book_{self.date_str}.txt"
-        self.coverart_path = self.data_dir / f"coverart_{self.date_str}.jpg"
-        self.log_path      = self.data_dir / f"log_{self.date_str}.txt"
-        self.pipeline_path = self.data_dir / f"pipeline_{self.date_str}.txt"
-
-        # Pipeline output file handle
         self.pipeline_file = None
 
     def init_pipeline_file(self):
         """Initialize pipeline output file for prompts and responses."""
-        self.pipeline_file = open(self.pipeline_path, 'a', encoding='utf-8')
-        logging.info(f"Pipeline output will be saved to {self.pipeline_path}")
-        self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.date_str}.
+        self.pipeline_file = open(self.paths.pipeline_path, 'a', encoding='utf-8')
+        logging.info(f"Pipeline output will be saved to {self.paths.pipeline_path}")
+        self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.paths.date_str}.
 Ollama textual model: {MODEL}
 Ollama multimodal vision model: {IMAGE_MODEL}""")
 
@@ -107,8 +146,8 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
             **kwargs: Field name and value pairs to add/update in JSON
         """
         # Load existing data if file exists
-        if self.data_path.exists():
-            with open(self.data_path, 'r', encoding='utf-8') as f:
+        if self.paths.data_path.exists():
+            with open(self.paths.data_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         else:
             data = {}
@@ -118,7 +157,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         print(json.dumps(kwargs, indent=2))
 
         # Write back to file
-        with open(self.data_path, 'w', encoding='utf-8') as f:
+        with open(self.paths.data_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
 
     def load_data_file(self):
@@ -128,14 +167,14 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         Returns:
             dict: Loaded pipeline data with 'weather', 'literature', 'album' keys, or None on failure
         """
-        if not self.data_path.exists():
-            logging.error(f"Data file not found: {self.data_path}")
+        if not self.paths.data_path.exists():
+            logging.error(f"Data file not found: {self.paths.data_path}")
             return None
 
         try:
-            with open(self.data_path, 'r', encoding='utf-8') as f:
+            with open(self.paths.data_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            logging.info(f"Loaded data from {self.data_path}")
+            logging.info(f"Loaded data from {self.paths.data_path}")
             return data
         except Exception as e:
             logging.exception(f"Failed to load data file: {e}")
@@ -152,9 +191,9 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
             logging.warning("No greeting text to save.")
             return
 
-        with open(self.greeting_path, 'w', encoding='utf-8') as f:
+        with open(self.paths.greeting_path, 'w', encoding='utf-8') as f:
             f.write(greeting_text)
-        logging.info(f"Saved greeting to {self.greeting_path}")
+        logging.info(f"Saved greeting to {self.paths.greeting_path}")
 
     def save_coverart(self, image_data):
         """
@@ -163,9 +202,9 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         Args:
             image_data: Raw bytes of JPEG image
         """
-        with open(self.coverart_path, "wb") as f:
+        with open(self.paths.coverart_path, "wb") as f:
             f.write(image_data)
-        logging.info(f"Saved cover art to {self.coverart_path}")
+        logging.info(f"Saved cover art to {self.paths.coverart_path}")
 
     def save_book(self, text):
         """
@@ -174,9 +213,9 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         Args:
             text: Unicode text fetched from prject gutenberg
         """
-        with open(self.book_path, 'w', encoding='utf-8') as f:
+        with open(self.paths.book_path, 'w', encoding='utf-8') as f:
             f.write(text)
-        logging.info(f"Saved book to {self.book_path}")
+        logging.info(f"Saved book to {self.paths.book_path}")
 
     def load_book(self):
         """
@@ -186,9 +225,9 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
             str: the content of the book file
         """
         try:
-            with open(self.book_path, 'r', encoding='utf-8') as f:
+            with open(self.paths.book_path, 'r', encoding='utf-8') as f:
                 text = f.read()
-            logging.info(f"Loaded book from {self.book_path}")
+            logging.info(f"Loaded book from {self.paths.book_path}")
             return text
         except Exception as e:
             logging.exception(f"Failed to load book: {e}")
@@ -210,7 +249,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
 
         fmt = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
 
-        file_handler = logging.FileHandler(self.log_path, mode='a')
+        file_handler = logging.FileHandler(self.paths.log_path, mode='a')
         file_handler.setFormatter(fmt)
 
         console_handler = logging.StreamHandler()
@@ -219,7 +258,7 @@ Ollama multimodal vision model: {IMAGE_MODEL}""")
         root_logger.addHandler(file_handler)
         root_logger.addHandler(console_handler)
 
-        logging.info(f"Logging to {self.log_path}")
+        logging.info(f"Logging to {self.paths.log_path}")
 
     def __enter__(self):
         """Context manager entry - configure logging and initialize pipeline file."""

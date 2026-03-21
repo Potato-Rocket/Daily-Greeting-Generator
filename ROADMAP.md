@@ -10,9 +10,9 @@ Minimum to get off conda and into Docker, keeping everything else the same.
 
 ## Phase 2 — Flask API
 Replace cron-triggered script with persistent service.
-- Move pipeline orchestration from `main.py` → `generator/orchestrator.py`
+- ~~Move pipeline orchestration from `main.py` → `generator/orchestrator.py`~~
 - `main.py` becomes Flask server:
-  - `POST /generate` — blocking, deduplicated (lock + check)
+  - ~~`POST /generate` — blocking, deduplicated (lock + check)~~
   - `GET /greeting?fallback=fail|last|random` — returns metadata JSON
   - `GET /audio/<date>` — returns WAV
 - `cli.py` for local testing, calls same orchestrator

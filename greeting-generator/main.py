@@ -1,7 +1,7 @@
 import threading
 from flask import Flask, jsonify
 
-from generator.orchestrator import run_pipeline
+from generator.generator import run_pipeline
 
 app = Flask(__name__)
 _pipeline_lock = threading.Lock()

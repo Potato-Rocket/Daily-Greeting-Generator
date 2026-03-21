@@ -26,14 +26,14 @@ def synthesize_greeting(text, io_manager):
     Returns:
         str: Path to generated audio file, or None on failure
     """
-    output_path = io_manager.audio_path
+    output_path = io_manager.paths.audio_path
 
     try:
         logging.info("Initializing piper")
 
         # Glob for model files in the models directory
         logging.info("Searching for models")
-        model_dir = Path(io_manager.model_dir)
+        model_dir = io_manager.paths.model_dir
         models = [m for m in model_dir.glob("*.onnx") if (m.with_suffix(".onnx.json")).exists()]
 
         # Ensure at least one valid model is present
