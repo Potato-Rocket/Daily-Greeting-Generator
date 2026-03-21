@@ -6,10 +6,11 @@ Loads settings from config.ini file with fallback to module defaults.
 
 import configparser
 import logging
-from pathlib import Path
+
+from .io_manager import BASE_DIR
 
 
-def load_config(base_dir):
+def load_config():
     """
     Load configuration from config.ini file.
 
@@ -19,7 +20,7 @@ def load_config(base_dir):
     Returns:
         dict: Configuration values as {"section.key": "value"}, or empty dict if no config file
     """
-    config_path = Path(base_dir) / "config" / "config.ini"
+    config_path = BASE_DIR / "config" / "config.ini"
 
     if not config_path.exists():
         return {}
@@ -51,7 +52,7 @@ def apply_config(config_dict):
         logging.info("No config file found, using defaults")
         return
 
-    from . import data_sources, llm, tts, pipeline
+    from . import data_sources, llm
 
     # Weather configuration
     if "weather.lat" in config_dict:
