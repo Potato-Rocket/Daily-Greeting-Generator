@@ -40,14 +40,15 @@ git push origin "v${VERSION}"
 echo "Building Docker image..."
 docker compose build
 
-echo "Pushing to Docker Hub..."
+echo "Tagging Docker image..."
 docker tag "${IMAGE_NAME}:dev" "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
 docker tag "${IMAGE_NAME}:dev" "${DOCKER_USER}/${IMAGE_NAME}:latest"
+
+echo "Pushing to Docker Hub..."
 docker push "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
 docker push "${DOCKER_USER}/${IMAGE_NAME}:latest"
 
 echo "Cleaning up..."
-
 docker image rm "${DOCKER_USER}/${IMAGE_NAME}:${VERSION}"
 docker image rm "${DOCKER_USER}/${IMAGE_NAME}:latest"
 
