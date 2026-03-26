@@ -7,7 +7,7 @@ Executes the full multi-stage LLM pipeline for generating personalized wake-up m
 import json
 import logging
 
-from .config import load_config, apply_config
+from .config import Config
 from .io_manager import IOManager
 from .data_sources import get_weather_data
 from .pipeline import *
@@ -26,9 +26,8 @@ def run_pipeline():
     6. TTS synthesis
     """
 
-    # Load configuration overrides
-    config = load_config()
-    apply_config(config)
+    # Load configuration from YAML
+    Config.load()
 
     # Initialize I/O manager with context manager to ensure pipeline file is opened/closed
     with IOManager() as io_manager:

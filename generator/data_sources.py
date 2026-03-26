@@ -15,23 +15,10 @@ import re
 import logging
 import time
 
-# Weather.gov API configuration
-LAT = 0.0
-LON = 0.0
-USER_AGENT = "DailyGreeting/1.0"
-
-# Navidrome server configuration
-NAVIDROME_BASE = "http://localhost:4533"
-NAVIDROME_USER = "username"
-NAVIDROME_PASS = "password"
-NAVIDROME_CLIENT = "DailyGreeting"
-
-# Literature excerpt parameters
-LITERATURE_LENGTH = 600
-LITERATURE_PADDING = 2000
+from .config import Config
 
 # General requests parameter
-TIMEOUT=30
+TIMEOUT = 30
 
 
 def get_weather_data():
@@ -46,8 +33,8 @@ def get_weather_data():
         logging.info("Fetching weather data from weather.gov API")
 
         # Convert latitude and longitude to NWS grid coordinates
-        points_url = f"https://api.weather.gov/points/{LAT},{LON}"
-        points_response = requests.get(points_url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
+        points_url = f"https://api.weather.gov/points/{Config.instance().weather.lat},{Config.instance().weather.lon}"
+        points_response = requests.get(points_url, headers={"User-Agent": Config.instance().weather.user_agent}, timeout=TIMEOUT)
         logging.debug(f"Points API call took {time.time() - start_time:.2f}s")
 
         if points_response.status_code != 200:
@@ -61,8 +48,8 @@ def get_weather_data():
 
         # Fetch forecast data
         forecast_start = time.time()
-        forecast_response = requests.get(forecast_url, headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
-        hourly_response = requests.get(forecast_hourly_url, headers={"User-Agent": USER_AGENT})
+        forecast_response = requests.get(forecast_url, headers={"User-Agent": Config.instance().weather.user_agent}, timeout=TIMEOUT)
+        hourly_response = requests.get(forecast_hourly_url, headers={"User-Agent": Config.instance().weather.user_agent})
         logging.debug(f"Forecast API calls took {time.time() - forecast_start:.2f}s")
 
         if forecast_response.status_code != 200 or hourly_response.status_code != 200:
@@ -117,7 +104,7 @@ def get_weather_data():
         return None
 
 
-def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
+def get_random_literature(length=None, padding=None):
     """
     Retrieve a random excerpt from an English book using the Gutendex API.
 
@@ -130,6 +117,9 @@ def get_random_literature(length=LITERATURE_LENGTH, padding=LITERATURE_PADDING):
     Returns:
         dict: Literature data with 'title', 'author', 'excerpt' keys, or None on failure
     """
+    length = length if length is not None else Config.instance().literature.length
+    padding = padding if padding is not None else Config.instance().literature.padding
+
     try:
         start_time = time.time()
         # Select random page using exponential distribution (favors lower page numbers)
@@ -247,7 +237,8 @@ def get_navidrome_albums(count=5):
         start_time = time.time()
         logging.info(f"Fetching {count} random albums from Navidrome")
 
-        api_url = f"{NAVIDROME_BASE}/rest/getAlbumList2.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&type=random&size={count}"
+        nav = Config.instance().navidrome
+        api_url = f"{nav.base_url}/rest/getAlbumList2.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&f=json&type=random&size={count}"
         response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Navidrome album list API call took {time.time() - start_time:.2f}s")
 
@@ -291,7 +282,8 @@ def get_album_details(album_id):
         start_time = time.time()
         logging.info(f"Fetching album details (ID: {album_id})")
 
-        api_url = f"{NAVIDROME_BASE}/rest/getAlbum.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&f=json&id={album_id}"
+        nav = Config.instance().navidrome
+        api_url = f"{nav.base_url}/rest/getAlbum.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&f=json&id={album_id}"
         response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Navidrome album details API call took {time.time() - start_time:.2f}s")
 
@@ -305,7 +297,7 @@ def get_album_details(album_id):
         songs = []
         for song in album['song']:
             song_id = song['id']
-            stream_url = f"{NAVIDROME_BASE}/rest/stream.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&id={song_id}"
+            stream_url = f"{nav.base_url}/rest/stream.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&id={song_id}"
             songs.append({
                 'title': song['title'],
                 'url': stream_url
@@ -320,7 +312,7 @@ def get_album_details(album_id):
             coverart = None
         else:
             logging.debug(f"Fetching cover art (ID: {coverart_id})")
-            api_url = f"{NAVIDROME_BASE}/rest/getCoverArt.view?u={NAVIDROME_USER}&p={quote(NAVIDROME_PASS)}&v=1.16.1&c={NAVIDROME_CLIENT}&id={coverart_id}"
+            api_url = f"{nav.base_url}/rest/getCoverArt.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&id={coverart_id}"
             art_start = time.time()
             response = requests.get(api_url)
             logging.debug(f"Cover art download took {time.time() - art_start:.2f}s")

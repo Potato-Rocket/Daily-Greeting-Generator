@@ -11,12 +11,9 @@ import wave
 from piper import PiperVoice, download_voices
 from piper.config import SynthesisConfig
 
-DEFAULT_VOICE = "en_US-lessac-high"
+from .config import Config
 
-PIPER_VOICE = "random"
-PIPER_LENGTH_SCALE = 1.15
-PIPER_NOISE_SCALE = 0.667
-PIPER_NOISE_W_SCALE = 0.8
+DEFAULT_VOICE = "en_US-lessac-high"
 
 
 def _available_models(model_dir):
@@ -43,7 +40,7 @@ def _select_model(model_dir, voice=None):
     Default recurses to "random" (any available model). "random" with nothing raises.
     """
     if voice is None:
-        voice = PIPER_VOICE
+        voice = Config.instance().piper.voice
 
     models = _available_models(model_dir)
 
@@ -97,21 +94,22 @@ def synthesize_greeting(text, io_manager):
 
     try:
         logging.info("Initializing Piper TTS")
-        from .io_manager import MODEL_DIR as model_dir
+        piper_cfg = Config.instance().piper
 
         syn_config = SynthesisConfig(
-            length_scale=PIPER_LENGTH_SCALE,
-            noise_scale=PIPER_NOISE_SCALE,
-            noise_w_scale=PIPER_NOISE_W_SCALE,
+            length_scale=piper_cfg.length_scale,
+            noise_scale=piper_cfg.noise_scale,
+            noise_w_scale=piper_cfg.noise_w_scale,
         )
         logging.debug(
-            f"Piper config: voice={PIPER_VOICE}, "
-            f"length_scale={PIPER_LENGTH_SCALE}, "
-            f"noise_scale={PIPER_NOISE_SCALE}, "
-            f"noise_w_scale={PIPER_NOISE_W_SCALE}"
+            f"Piper config: voice={piper_cfg.voice}, "
+            f"length_scale={piper_cfg.length_scale}, "
+            f"noise_scale={piper_cfg.noise_scale}, "
+            f"noise_w_scale={piper_cfg.noise_w_scale}"
         )
 
-        speaker = _select_model(model_dir)
+        from .io_manager import MODEL_DIR
+        speaker = _select_model(MODEL_DIR)
 
         logging.info(f"Synthesizing greeting to {output_path}")
         start_time = time.time()

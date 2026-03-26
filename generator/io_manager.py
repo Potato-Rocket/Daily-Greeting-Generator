@@ -19,7 +19,7 @@ from enum import Enum
 from pathlib import Path
 from datetime import datetime
 
-from .llm import MODEL, IMAGE_MODEL
+from .config import Config
 
 BASE_DIR   = Path(os.environ.get("GREETING_BASE_DIR", "/"))
 DATA_DIR   = BASE_DIR / "data"
@@ -132,8 +132,8 @@ class IOManager:
         self.pipeline_file = open(self.paths.pipeline_path, 'a', encoding='utf-8')
         logging.info(f"Pipeline output will be saved to {self.paths.pipeline_path}")
         self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.paths.date_str}.
-Ollama textual model: {MODEL}
-Ollama multimodal vision model: {IMAGE_MODEL}""")
+Ollama textual model: {Config.instance().ollama.model}
+Ollama multimodal vision model: {Config.instance().ollama.image_model}""")
 
     def write_to_pipeline(self, text):
         """

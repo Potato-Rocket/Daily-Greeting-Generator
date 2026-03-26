@@ -1,99 +1,93 @@
 """
 Configuration Module for Daily Greeting Generator
 
-Loads settings from config.ini file with fallback to module defaults.
+Loads settings from config.yaml with typed defaults via dataclasses.
+Env vars (GREETING_BASE_DIR, GREETING_CONFIG_DIR) set paths; everything
+else lives in config.yaml and is re-read each generation.
 """
 
 import os
-import configparser
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import ClassVar, Optional
 
-CONFIG_DIR = Path(os.environ.get("GREETING_CONFIG_DIR", "/config/"))
-
-
-def load_config():
-    """
-    Load configuration from config.ini file.
-
-    Reads config.ini from project root and returns all settings as a
-    flat dictionary with dot-notation keys (e.g., "weather.lat").
-
-    Returns:
-        dict: Configuration values as {"section.key": "value"}, or empty dict if no config file
-    """
-    config_path = CONFIG_DIR / "config.ini"
-
-    if not config_path.exists():
-        return {}
-
-    config = configparser.ConfigParser()
-    config.read(config_path)
-
-    # Flatten config to dot-notation dictionary
-    config_dict = {}
-    for section in config.sections():
-        for key, value in config[section].items():
-            config_dict[f"{section}.{key}"] = value
-
-    logging.debug(f"Loaded {len(config_dict)} config values from {config_path}")
-    return config_dict
+import yaml
 
 
-def apply_config(config_dict):
-    """
-    Apply configuration values to module constants.
+@dataclass
+class WeatherConfig:
+    lat: float = 0.0
+    lon: float = 0.0
+    user_agent: str = "DailyGreeting/1.0"
 
-    Updates constants in data_sources, llm, tts, and io_manager modules
-    based on loaded configuration.
 
-    Args:
-        config_dict: Dictionary from load_config() with dot-notation keys
-    """
-    if not config_dict:
-        logging.info("No config file found, using defaults")
-        return
+@dataclass
+class OllamaConfig:
+    host: str = "http://localhost:11434"
+    model: str = "mistral:7b"
+    image_model: str = "llava:7b"
 
-    from . import data_sources, llm, tts
 
-    # Weather configuration
-    if "weather.lat" in config_dict:
-        data_sources.LAT = float(config_dict["weather.lat"])
-    if "weather.lon" in config_dict:
-        data_sources.LON = float(config_dict["weather.lon"])
-    if "weather.user_agent" in config_dict:
-        data_sources.USER_AGENT = config_dict["weather.user_agent"]
+@dataclass
+class NavidromeConfig:
+    base_url: str = "http://localhost:4533"
+    username: str = "username"
+    password: str = "password"
+    client_name: str = "DailyGreeting"
 
-    # Ollama configuration (base_url is now OLLAMA_HOST env var)
-    if "ollama.model" in config_dict:
-        llm.MODEL = config_dict["ollama.model"]
-    if "ollama.image_model" in config_dict:
-        llm.IMAGE_MODEL = config_dict["ollama.image_model"]
 
-    # Navidrome configuration
-    if "navidrome.base_url" in config_dict:
-        data_sources.NAVIDROME_BASE = config_dict["navidrome.base_url"]
-    if "navidrome.username" in config_dict:
-        data_sources.NAVIDROME_USER = config_dict["navidrome.username"]
-    if "navidrome.password" in config_dict:
-        data_sources.NAVIDROME_PASS = config_dict["navidrome.password"]
-    if "navidrome.client_name" in config_dict:
-        data_sources.NAVIDROME_CLIENT = config_dict["navidrome.client_name"]
+@dataclass
+class LiteratureConfig:
+    length: int = 600
+    padding: int = 2000
 
-    # Literature configuration
-    if "literature.length" in config_dict:
-        data_sources.LITERATURE_LENGTH = int(config_dict["literature.length"])
-    if "literature.padding" in config_dict:
-        data_sources.LITERATURE_PADDING = int(config_dict["literature.padding"])
 
-    # Piper TTS configuration
-    if "piper.voice" in config_dict:
-        tts.PIPER_VOICE = config_dict["piper.voice"]
-    if "piper.length_scale" in config_dict:
-        tts.PIPER_LENGTH_SCALE = float(config_dict["piper.length_scale"])
-    if "piper.noise_scale" in config_dict:
-        tts.PIPER_NOISE_SCALE = float(config_dict["piper.noise_scale"])
-    if "piper.noise_w_scale" in config_dict:
-        tts.PIPER_NOISE_W_SCALE = float(config_dict["piper.noise_w_scale"])
+@dataclass
+class PiperConfig:
+    voice: str = "random"
+    length_scale: float = 1.15
+    noise_scale: float = 0.667
+    noise_w_scale: float = 0.8
 
-    logging.info(f"Applied {len(config_dict)} configuration overrides")
+
+@dataclass
+class Config:
+    weather: WeatherConfig = field(default_factory=WeatherConfig)
+    ollama: OllamaConfig = field(default_factory=OllamaConfig)
+    navidrome: NavidromeConfig = field(default_factory=NavidromeConfig)
+    literature: LiteratureConfig = field(default_factory=LiteratureConfig)
+    piper: PiperConfig = field(default_factory=PiperConfig)
+
+    _instance: ClassVar[Optional["Config"]] = None
+
+    @classmethod
+    def load(cls) -> "Config":
+        """Load config from YAML, creating/updating the singleton."""
+        config_dir = Path(os.environ.get("GREETING_CONFIG_DIR", "/config/"))
+        config_path = config_dir / "config.yaml"
+
+        if not config_path.exists():
+            logging.info("No config file found, using defaults")
+            cls._instance = cls()
+            return cls._instance
+
+        with open(config_path) as f:
+            data = yaml.safe_load(f) or {}
+
+        cls._instance = cls(
+            weather=WeatherConfig(**data.get("weather", {})),
+            ollama=OllamaConfig(**data.get("ollama", {})),
+            navidrome=NavidromeConfig(**data.get("navidrome", {})),
+            literature=LiteratureConfig(**data.get("literature", {})),
+            piper=PiperConfig(**data.get("piper", {})),
+        )
+        logging.debug(f"Loaded config from {config_path}")
+        return cls._instance
+
+    @classmethod
+    def instance(cls) -> "Config":
+        """Get the current config singleton. Loads defaults if not yet loaded."""
+        if cls._instance is None:
+            cls.load()
+        return cls._instance

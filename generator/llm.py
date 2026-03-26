@@ -4,19 +4,15 @@ LLM Interface for Daily Greeting Generator
 Handles communication with Ollama for text generation and vision tasks.
 """
 
-import os
 import logging
 import time
 import ollama
 
-# Ollama API configuration
-OLLAMA_BASE = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-MODEL = "mistral:7b"
-IMAGE_MODEL = "llava:7b"
+from .config import Config
 
 
 def _get_client():
-    return ollama.Client(host=OLLAMA_BASE)
+    return ollama.Client(host=Config.instance().ollama.host)
 
 
 def send_ollama_request(prompt):
@@ -30,10 +26,10 @@ def send_ollama_request(prompt):
         str: LLM response text, or None on failure
     """
     start_time = time.time()
-    logging.info(f"Sending request to Ollama ({MODEL})")
+    logging.info(f"Sending request to Ollama ({Config.instance().ollama.model})")
 
     try:
-        response = _get_client().generate(model=MODEL, prompt=prompt)
+        response = _get_client().generate(model=Config.instance().ollama.model, prompt=prompt)
         api_time = time.time() - start_time
         logging.debug(f"Ollama API call took {api_time:.2f}s")
 
@@ -63,11 +59,11 @@ def send_ollama_image_request(prompt, image_base64):
         str: Vision model response text, or None on failure
     """
     start_time = time.time()
-    logging.info(f"Sending vision request to Ollama ({IMAGE_MODEL})")
+    logging.info(f"Sending vision request to Ollama ({Config.instance().ollama.image_model})")
 
     try:
         response = _get_client().generate(
-            model=IMAGE_MODEL,
+            model=Config.instance().ollama.image_model,
             prompt=prompt,
             images=[image_base64],
         )

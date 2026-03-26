@@ -1,0 +1,28 @@
+# Daily Greeting Configuration
+# Copy to config.yaml and customize for your environment
+
+weather:
+  lat: 0.0
+  lon: 0.0
+  user_agent: DailyGreeting/1.0
+
+ollama:
+  host: http://localhost:11434
+  model: mistral:7b
+  image_model: llava:7b
+
+navidrome:
+  base_url: http://localhost:4533
+  username: username
+  password: password
+  client_name: DailyGreeting
+
+literature:
+  length: 600
+  padding: 2000
+
+piper:
+  voice: random
+  length_scale: 1.15
+  noise_scale: 0.667
+  noise_w_scale: 0.8

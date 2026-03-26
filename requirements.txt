@@ -2,3 +2,4 @@ requests
 ollama
 piper-tts
 flask
+pyyaml
