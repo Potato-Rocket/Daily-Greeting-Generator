@@ -4,10 +4,12 @@ Configuration Module for Daily Greeting Generator
 Loads settings from config.ini file with fallback to module defaults.
 """
 
+import os
 import configparser
 import logging
+from pathlib import Path
 
-from .io_manager import BASE_DIR
+CONFIG_DIR = Path(os.environ.get("GREETING_CONFIG_DIR", "/config/"))
 
 
 def load_config():
@@ -20,7 +22,7 @@ def load_config():
     Returns:
         dict: Configuration values as {"section.key": "value"}, or empty dict if no config file
     """
-    config_path = BASE_DIR / "config" / "config.ini"
+    config_path = CONFIG_DIR / "config.ini"
 
     if not config_path.exists():
         return {}
@@ -62,9 +64,7 @@ def apply_config(config_dict):
     if "weather.user_agent" in config_dict:
         data_sources.USER_AGENT = config_dict["weather.user_agent"]
 
-    # Ollama configuration
-    if "ollama.base_url" in config_dict:
-        llm.OLLAMA_BASE = config_dict["ollama.base_url"]
+    # Ollama configuration (base_url is now OLLAMA_HOST env var)
     if "ollama.model" in config_dict:
         llm.MODEL = config_dict["ollama.model"]
     if "ollama.image_model" in config_dict:

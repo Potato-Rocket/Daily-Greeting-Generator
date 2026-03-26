@@ -8,9 +8,9 @@ lat = 0.00
 lon = 0.00
 user_agent = DailyGreeting/1.0
 
-# Ollama server configuration
+# Ollama model configuration
+# Server URL is set via OLLAMA_HOST env var (default: http://localhost:11434)
 [ollama]
-base_url = http://localhost:11434
 model = mistral:7b
 image_model = llava:7b
 

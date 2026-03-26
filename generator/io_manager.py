@@ -11,6 +11,7 @@ Handles all file operations including:
 - Album cover art saving
 """
 
+import os
 import json
 import logging
 import random
@@ -20,8 +21,10 @@ from datetime import datetime
 
 from .llm import MODEL, IMAGE_MODEL
 
-BASE_DIR = Path("/")
-LOG_LEVEL = logging.INFO
+BASE_DIR   = Path(os.environ.get("GREETING_BASE_DIR", "/"))
+DATA_DIR   = BASE_DIR / "data"
+MODEL_DIR  = BASE_DIR / "models"
+LOG_LEVEL  = logging.INFO
 LOG_FMT = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
 
 
@@ -54,15 +57,12 @@ def _today() -> str:
 
 class PathManager:
     """Pure path computation for a given date. No side effects."""
-    
-    model_dir = BASE_DIR / "models"
-    data_dir  = BASE_DIR / "data"
 
     def __init__(self, date_str):
         self.date_str      = date_str
 
         # Directories
-        self.date_dir      = PathManager.data_dir / date_str
+        self.date_dir      = DATA_DIR / date_str
 
         # File paths
         self.data_path     = self.date_dir / f"data_{date_str}.json"
@@ -86,7 +86,7 @@ def get_paths(date_str, fallback=Mode.FAIL):
     except ValueError:
         pass  # literal date string
 
-    date_strs = [d.name for d in PathManager.data_dir.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
+    date_strs = [d.name for d in DATA_DIR.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
     valid_strs = [d for d in date_strs if PathManager(d).is_valid()]
     valid_strs.sort()
 
@@ -122,9 +122,8 @@ class IOManager:
         self.paths = paths or PathManager(_today())
 
         # Ensure directories exist
-        BASE_DIR.mkdir(exist_ok=True)
         self.paths.date_dir.mkdir(exist_ok=True, parents=True)
-        self.paths.model_dir.mkdir(exist_ok=True, parents=True)
+        MODEL_DIR.mkdir(exist_ok=True, parents=True)
 
         self.pipeline_file = None
 

@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 config.ini
+.env
 data/
 .venv/
 models/

@@ -97,7 +97,7 @@ def synthesize_greeting(text, io_manager):
 
     try:
         logging.info("Initializing Piper TTS")
-        model_dir = io_manager.paths.model_dir
+        from .io_manager import MODEL_DIR as model_dir
 
         syn_config = SynthesisConfig(
             length_scale=PIPER_LENGTH_SCALE,

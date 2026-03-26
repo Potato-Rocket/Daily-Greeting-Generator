@@ -30,6 +30,7 @@ NAVIDROME_CLIENT = "DailyGreeting"
 LITERATURE_LENGTH = 600
 LITERATURE_PADDING = 2000
 
+# General requests parameter
 TIMEOUT=30
 
 
