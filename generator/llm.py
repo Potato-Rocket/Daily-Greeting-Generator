@@ -25,7 +25,6 @@ def send_ollama_request(prompt):
     Returns:
         str: LLM response text, or None on failure
     """
-    unload_model(IMAGE_MODEL)
     start_time = time.time()
     logging.info(f"Sending request to Ollama ({MODEL})")
 
@@ -66,8 +65,6 @@ def send_ollama_image_request(prompt, image_base64):
     Returns:
         str: Vision model response text, or None on failure
     """
-    unload_model(MODEL)
-
     start_time = time.time()
     logging.info(f"Sending vision request to Ollama ({IMAGE_MODEL})")
 
@@ -96,62 +93,3 @@ def send_ollama_image_request(prompt, image_base64):
     except Exception as e:
         logging.exception(f"Ollama vision request error: {e}")
         return None
-
-
-def unload_model(model_name):
-    """
-    Explicitly unload a model from Ollama to free GPU memory.
-
-    Sends a request with keep_alive=0 to immediately unload the model
-    from memory. Useful for freeing resources between pipeline runs or
-    when switching between models.
-
-    Args:
-        model_name: Name of the model to unload (e.g., "mistral:7b")
-
-    Returns:
-        bool: True if unload request succeeded, False on failure
-    """
-    logging.info(f"Unloading model from Ollama ({model_name})")
-
-    payload = {
-        "model": model_name,
-        "keep_alive": 0
-    }
-
-    try:
-        response = requests.post(OLLAMA_BASE + "/api/generate", json=payload)
-
-        if response.status_code != 200:
-            logging.error(f"Ollama unload API returned status {response.status_code}")
-            return False
-
-        logging.info(f"Model unloaded successfully ({model_name})")
-        return True
-
-    except Exception as e:
-        logging.exception(f"Ollama unload error: {e}")
-        return False
-
-
-def unload_all_models():
-    """
-    Unload all models used by the pipeline from Ollama.
-
-    Calls unload_model() for both the text model and vision model to free
-    all GPU memory after pipeline completion.
-
-    Returns:
-        bool: True if all models unloaded successfully, False if any failed
-    """
-    logging.info("Unloading all pipeline models")
-
-    text_success = unload_model(MODEL)
-    vision_success = unload_model(IMAGE_MODEL)
-
-    if text_success and vision_success:
-        logging.info("All models unloaded successfully")
-        return True
-    else:
-        logging.warning("Some models failed to unload")
-        return False

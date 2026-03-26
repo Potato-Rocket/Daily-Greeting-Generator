@@ -11,7 +11,6 @@ from .config import load_config, apply_config
 from .io_manager import IOManager
 from .data_sources import get_weather_data
 from .pipeline import *
-from .llm import unload_all_models
 from .tts import synthesize_greeting
 
 
@@ -79,8 +78,6 @@ def run_pipeline():
 
             # Stage 6: TTS synthesis
             logging.info("Stage 7: TTS synthesis")
-            # Clean up Ollama to save VRAM
-            unload_all_models()
             synthesize_greeting(greeting, io_manager)
 
             logging.info("=== PIPELINE COMPLETE ===")
