@@ -21,11 +21,16 @@ username = username
 password = password
 client_name = DailyGreeting
 
+# Piper TTS configuration
+# voice: model stem name, or "random" to pick from available models
+# length_scale: >1.0 = slower speech, <1.0 = faster
+[piper]
+voice = random
+length_scale = 1.15
+noise_scale = 0.667
+noise_w_scale = 0.8
+
 # Literature excerpt parameters
 [literature]
 length = 600
 padding = 2000
-
-# Playback server configuration
-[playback]
-server_url = http://localhost:7000

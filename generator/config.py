@@ -52,7 +52,7 @@ def apply_config(config_dict):
         logging.info("No config file found, using defaults")
         return
 
-    from . import data_sources, llm
+    from . import data_sources, llm, tts
 
     # Weather configuration
     if "weather.lat" in config_dict:
@@ -85,5 +85,15 @@ def apply_config(config_dict):
         data_sources.LITERATURE_LENGTH = int(config_dict["literature.length"])
     if "literature.padding" in config_dict:
         data_sources.LITERATURE_PADDING = int(config_dict["literature.padding"])
+
+    # Piper TTS configuration
+    if "piper.voice" in config_dict:
+        tts.PIPER_VOICE = config_dict["piper.voice"]
+    if "piper.length_scale" in config_dict:
+        tts.PIPER_LENGTH_SCALE = float(config_dict["piper.length_scale"])
+    if "piper.noise_scale" in config_dict:
+        tts.PIPER_NOISE_SCALE = float(config_dict["piper.noise_scale"])
+    if "piper.noise_w_scale" in config_dict:
+        tts.PIPER_NOISE_W_SCALE = float(config_dict["piper.noise_w_scale"])
 
     logging.info(f"Applied {len(config_dict)} configuration overrides")

@@ -26,10 +26,10 @@ Replace cron-triggered script with persistent service.
 
 ## Phase 4 — Home Assistant Integration
 HA orchestrates scheduling and playback, replacing playback server.
-- HA automation: call `/generate` at 2am
-  - Should ping ntfy
-- At sunrise: call `/greeting?fallback=last`, play audio via media player, queue album
-- Retire `check_sunrise.sh` and Flask playback receiver
+- ~~HA automation: call `/generate` at 2am~~
+  - ~~Should ping ntfy~~
+- ~~At sunrise: call `/greeting?fallback=last`, play audio via media player, queue album~~
+- ~~Retire `check_sunrise.sh` and Flask playback receiver~~
 
 ## Phase 5 — Config Split
 Separate infrastructure/secrets from behavioral tuning.
@@ -50,3 +50,5 @@ Standardize source interface for extensibility.
 - Synthesis loops over active sources
 - Each source reads its own `[section]` from config
 - Replace raw requests with more reliable library API wrappers where applicable
+
+## Phase 8 — Strengthen testing and validation
