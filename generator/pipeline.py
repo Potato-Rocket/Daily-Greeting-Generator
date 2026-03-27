@@ -219,7 +219,7 @@ def generate_greeting(io_manager, weather, literature, album):
     greeting_length = _choose_greeting_length()
     logging.debug(f"Chosen target greeting length: {greeting_length} words")
 
-    synthesis_prompt = "Compose a whimsical, motivating morning wake-up call for Oscar."
+    synthesis_prompt = "Compose a whimsical, motivating morning wake-up message."
 
     # Only use this blurb
     if album or weather or literature:

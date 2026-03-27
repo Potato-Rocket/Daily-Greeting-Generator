@@ -14,3 +14,4 @@
 3. Implements specification and verification of json format, particularly for the strict or multi-part responses, use raw to avoid weird default templates
 4. Consider where to use thinking and where to use structured reasoning
 5. ~~Can we specify the desired response length? Then we could bring back the random lognormal length determination~~
+6. Switch from Ollama to a llama.cpp server with OpenAI API for speed improvements.
