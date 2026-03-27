@@ -8,8 +8,8 @@ weather:
 
 ollama:
   host: http://localhost:11434
-  model: mistral:7b
-  image_model: llava:7b
+  text_model: mistral:7b
+  multimodal_model: llava:7b
 
 navidrome:
   base_url: http://localhost:4533

@@ -132,8 +132,8 @@ class IOManager:
         self.pipeline_file = open(self.paths.pipeline_path, 'a', encoding='utf-8')
         logging.info(f"Pipeline output will be saved to {self.paths.pipeline_path}")
         self.write_to_pipeline(f"""Morning greeting generation pipeline for {self.paths.date_str}.
-Ollama textual model: {Config.instance().ollama.model}
-Ollama multimodal vision model: {Config.instance().ollama.image_model}""")
+Ollama textual model: {Config.instance().ollama.text_model}
+Ollama multimodal vision model: {Config.instance().ollama.multimodal_model}""")
 
     def write_to_pipeline(self, text):
         """
@@ -271,7 +271,7 @@ Ollama multimodal vision model: {Config.instance().ollama.image_model}""")
         self.init_pipeline_file()
         return self
 
-    def __exit__(self):
+    def __exit__(self, type, value, traceback):
         """Context manager exit - close pipeline file."""
         self.close()
         return False

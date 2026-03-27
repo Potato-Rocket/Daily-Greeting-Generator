@@ -7,12 +7,11 @@ else lives in config.yaml and is re-read each generation.
 """
 
 import os
+import yaml
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar, Optional
-
-import yaml
 
 
 @dataclass
@@ -25,8 +24,8 @@ class WeatherConfig:
 @dataclass
 class OllamaConfig:
     host: str = "http://localhost:11434"
-    model: str = "mistral:7b"
-    image_model: str = "llava:7b"
+    text_model: str = "mistral:7b"
+    multimodal_model: str = "llava:7b"
 
 
 @dataclass

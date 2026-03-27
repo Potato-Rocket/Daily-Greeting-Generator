@@ -7,15 +7,22 @@ Handles communication with Ollama for text generation and vision tasks.
 import logging
 import time
 import ollama
+from enum import Enum
 
 from .config import Config
+
+
+class Temperature(Enum):
+    LOW = 0.7
+    MEDIUM = 1.0
+    HIGH = 2.0
 
 
 def _get_client():
     return ollama.Client(host=Config.instance().ollama.host)
 
 
-def send_ollama_request(prompt):
+def send_ollama_request(prompt, temp=Temperature.MEDIUM):
     """
     Send a prompt to Ollama and return the response text.
 
@@ -26,10 +33,14 @@ def send_ollama_request(prompt):
         str: LLM response text, or None on failure
     """
     start_time = time.time()
-    logging.info(f"Sending request to Ollama ({Config.instance().ollama.model})")
+    logging.info(f"Sending request to Ollama ({Config.instance().ollama.text_model})")
 
     try:
-        response = _get_client().generate(model=Config.instance().ollama.model, prompt=prompt)
+        response = _get_client().generate(
+            model=Config.instance().ollama.multimodal_model,
+            prompt=prompt,
+            think=False
+        )
         api_time = time.time() - start_time
         logging.debug(f"Ollama API call took {api_time:.2f}s")
 
@@ -47,7 +58,7 @@ def send_ollama_request(prompt):
         return None
 
 
-def send_ollama_image_request(prompt, image_base64):
+def send_ollama_image_request(prompt, image_base64, temp=Temperature.MEDIUM):
     """
     Send a prompt with an image to Ollama and return the response text.
 
@@ -59,13 +70,17 @@ def send_ollama_image_request(prompt, image_base64):
         str: Vision model response text, or None on failure
     """
     start_time = time.time()
-    logging.info(f"Sending vision request to Ollama ({Config.instance().ollama.image_model})")
+    logging.info(f"Sending vision request to Ollama ({Config.instance().ollama.multimodal_model})")
 
     try:
         response = _get_client().generate(
-            model=Config.instance().ollama.image_model,
+            model=Config.instance().ollama.multimodal_model,
             prompt=prompt,
             images=[image_base64],
+            think=False,
+            options={
+                "temperature": 0.7
+            }
         )
         api_time = time.time() - start_time
         logging.debug(f"Ollama vision API call took {api_time:.2f}s")

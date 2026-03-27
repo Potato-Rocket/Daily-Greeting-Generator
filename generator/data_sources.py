@@ -8,7 +8,7 @@ Fetches data from external APIs:
 """
 
 import requests
-from urllib.parse import quote
+from urllib.parse import urlencode
 import base64
 import random
 import re
@@ -238,8 +238,12 @@ def get_navidrome_albums(count=5):
         logging.info(f"Fetching {count} random albums from Navidrome")
 
         nav = Config.instance().navidrome
-        api_url = f"{nav.base_url}/rest/getAlbumList2.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&f=json&type=random&size={count}"
-        response = requests.get(api_url, timeout=TIMEOUT)
+        params = {
+            "u": nav.username, "p": nav.password,
+            "v": "1.16.1", "c": nav.client_name, "f": "json",
+            "type": "random", "size": count,
+        }
+        response = requests.get(f"{nav.base_url}/rest/getAlbumList2.view", params=params, timeout=TIMEOUT, verify=False)
         logging.debug(f"Navidrome album list API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
@@ -283,8 +287,12 @@ def get_album_details(album_id):
         logging.info(f"Fetching album details (ID: {album_id})")
 
         nav = Config.instance().navidrome
-        api_url = f"{nav.base_url}/rest/getAlbum.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&f=json&id={album_id}"
-        response = requests.get(api_url, timeout=TIMEOUT)
+        params = {
+            "u": nav.username, "p": nav.password,
+            "v": "1.16.1", "c": nav.client_name, "f": "json",
+            "id": album_id,
+        }
+        response = requests.get(f"{nav.base_url}/rest/getAlbum.view", params=params, timeout=TIMEOUT, verify=False)
         logging.debug(f"Navidrome album details API call took {time.time() - start_time:.2f}s")
 
         if response.status_code != 200:
@@ -297,7 +305,14 @@ def get_album_details(album_id):
         songs = []
         for song in album['song']:
             song_id = song['id']
-            stream_url = f"{nav.base_url}/rest/stream.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&id={song_id}"
+            stream_params = urlencode({
+                "u": nav.username,
+                "p": nav.password,
+                "v": "1.16.1",
+                "c": nav.client_name,
+                "id": song_id
+            })
+            stream_url = f"{nav.base_url}/rest/stream.view?{stream_params}"
             songs.append({
                 'title': song['title'],
                 'url': stream_url
@@ -312,9 +327,9 @@ def get_album_details(album_id):
             coverart = None
         else:
             logging.debug(f"Fetching cover art (ID: {coverart_id})")
-            api_url = f"{nav.base_url}/rest/getCoverArt.view?u={nav.username}&p={quote(nav.password)}&v=1.16.1&c={nav.client_name}&id={coverart_id}"
+            art_params = {**params, "id": coverart_id}
             art_start = time.time()
-            response = requests.get(api_url)
+            response = requests.get(f"{nav.base_url}/rest/getCoverArt.view", params=art_params, verify=False)
             logging.debug(f"Cover art download took {time.time() - art_start:.2f}s")
 
             if response.status_code != 200:

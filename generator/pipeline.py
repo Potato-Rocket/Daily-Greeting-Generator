@@ -13,9 +13,9 @@ import base64
 import random
 import logging
 
-from .data_sources import get_random_literature, get_navidrome_albums, get_album_details
-from .formatters import format_literature, format_albums, format_album, format_weather
-from .llm import send_ollama_request, send_ollama_image_request
+from .data_sources import *
+from .formatters import *
+from .llm import send_ollama_image_request, send_ollama_request, Temperature
 
 
 def validate_literature(io_manager, max_attempts=5):
@@ -49,7 +49,7 @@ REASONING: One sentence reasoning about the suitability of the text.
 VERDICT: YES if suitable NO if not"""
 
         io_manager.print_section("LITERATURE VALIDATION - PROMPT", literature_prompt)
-        evaluation = send_ollama_request(literature_prompt)
+        evaluation = send_ollama_request(literature_prompt, Temperature.LOW)
 
         if evaluation is None:
             logging.error("Ollama request failed during literature validation")
@@ -113,7 +113,7 @@ REASONING: Two or three sentences considering different options before deciding 
 VERDICT: [number only] (just the number 1-5, nothing else)"""
 
     io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
-    evaluation = send_ollama_request(album_prompt)
+    evaluation = send_ollama_request(album_prompt, Temperature.LOW)
 
     if evaluation is None:
         logging.error("Ollama request failed during album selection")
@@ -205,7 +205,7 @@ def generate_greeting(io_manager, weather, literature, album):
     """
     logging.info("Starting synthesis layer")
 
-    synthesis_prompt = "Compose a motivating morning wake-up call for Oscar."
+    synthesis_prompt = "Compose a lengthy motivating morning wake-up call for Oscar."
 
     # Only use this blurb
     if album or weather or literature:
@@ -234,7 +234,7 @@ def generate_greeting(io_manager, weather, literature, album):
         synthesis_prompt += "\n\nAvoid references that are too specific or out of context, weave these elements into a unified vision.\n\nRespond with the final greeting only and no other text, avoid enclosing quotes."
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
-    greeting = send_ollama_request(synthesis_prompt)
+    greeting = send_ollama_request(synthesis_prompt, Temperature.HIGH)
 
     if greeting is None:
         logging.error("Ollama request failed during synthesis")
