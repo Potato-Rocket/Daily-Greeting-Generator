@@ -3,3 +3,4 @@ ollama
 piper-tts
 flask
 pyyaml
+jinja2

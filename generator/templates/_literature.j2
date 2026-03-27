@@ -1,0 +1,4 @@
+LITERATURE EXCERPT: "{{ literature.title }}" by {{ literature.author.name }}
+{%- if literature.author.birth_year and literature.author.death_year %} ({{ literature.author.birth_year }}-{{ literature.author.death_year }}){% endif %}:
+
+{{ literature.excerpt }}

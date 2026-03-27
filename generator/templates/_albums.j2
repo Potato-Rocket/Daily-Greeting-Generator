@@ -1,0 +1,4 @@
+ALBUMS:
+{% for a in albums %}
+[{{ loop.index }}] "{{ a.name }}" by {{ a.artist }} ({{ a.year }}) - Genres: {{ a.genres | join(', ') if a.genres else 'Unknown genre' }}
+{% endfor %}

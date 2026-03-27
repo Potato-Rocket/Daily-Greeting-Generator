@@ -1,0 +1,4 @@
+WEATHER DATA:
+Overnight: {{ weather.overnight.description }} {{ weather.overnight.precipitation }}% chance of precipitation.
+Sunrise (NOW): {{ weather.sunrise.temperature }}°F, {{ weather.sunrise.conditions }}, {{ weather.sunrise.humidity }}% humidity, dewpoint {{ "%.2f" | format(weather.sunrise.dewpoint) }}°C, wind {{ weather.sunrise.windSpeed }} from {{ weather.sunrise.windDirection }}, {{ weather.sunrise.precipitation }}% chance of precipitation.
+Today ({{ weather.today.dayOfWeek }}): {{ weather.today.description }} {{ weather.today.precipitation }}% chance of precipitation.

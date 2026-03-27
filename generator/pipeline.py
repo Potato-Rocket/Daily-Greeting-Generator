@@ -13,10 +13,24 @@ import base64
 import math
 import random
 import logging
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
 
 from .data_sources import *
-from .formatters import *
 from .llm import send_ollama_image_request, send_ollama_request, Temperature
+
+_template_dir = Path(__file__).parent / "templates"
+_jinja_env = Environment(
+    loader=FileSystemLoader(_template_dir),
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=False,
+)
+
+
+def _render(template_name, **kwargs):
+    return _jinja_env.get_template(template_name).render(**kwargs).strip()
 
 
 def validate_literature(io_manager, max_attempts=5):
@@ -40,14 +54,7 @@ def validate_literature(io_manager, max_attempts=5):
             logging.warning(f"Literature fetch failed on attempt {attempt}, retrying")
             continue
 
-        formatted_lit = format_literature(literature)
-        literature_prompt = f"""Please evaluate whether the following literary excerpt is interesting material from which to source literary style or elements for creative writing.
-
-{formatted_lit}
-
-Respond in the following format exactly:
-REASONING: One sentence reasoning about the suitability of the text.
-VERDICT: YES if suitable NO if not"""
+        literature_prompt = _render("literature_validation.j2", literature=literature)
 
         io_manager.print_section("LITERATURE VALIDATION - PROMPT", literature_prompt)
         evaluation = send_ollama_request(literature_prompt, Temperature.LOW)
@@ -89,29 +96,11 @@ def select_album(io_manager, literature):
         logging.warning("Navidrome unavailable, skipping album selection")
         return None
 
-    formatted_albums = format_albums(albums)
-
-    # Adapt prompt based on literature availability
-    if literature:
-        formatted_literature = format_literature(literature)
-        album_prompt = f"""Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
-
-{formatted_albums}
-
-{formatted_literature}
-
-Respond in the following format exactly:
-REASONING: Two or three sentences considering different options before deciding on the best choice.
-VERDICT: [number only] (just the number 1-5, nothing else)"""
-    else:
-        # Select album without literature context
-        album_prompt = f"""Please select one and only one of the following albums which would be most interesting for a morning wake-up greeting.
-
-{formatted_albums}
-
-Respond in the following format exactly:
-REASONING: Two or three sentences considering different options before deciding on the best choice.
-VERDICT: [number only] (just the number 1-5, nothing else)"""
+    album_prompt = _render(
+        "album_selection.j2",
+        albums=albums,
+        literature=literature,
+    )
 
     io_manager.print_section("ALBUM SELECTION - PROMPT", album_prompt)
     evaluation = send_ollama_request(album_prompt, Temperature.LOW)
@@ -175,9 +164,7 @@ def analyze_album_art(io_manager, album):
     coverart_bytes = base64.b64decode(album_details['coverart'])
     io_manager.save_coverart(coverart_bytes)
 
-    art_prompt = """Provide a detailed, factual description of the provided album cover art. Avoid any inference. Use three to five bullet points.
-
-Respond with only the description, no other text. Use markdown bullet points."""
+    art_prompt = _render("album_art.j2")
 
     io_manager.print_section("ALBUM ART - ANALYSIS PROMPT", art_prompt)
     analysis = send_ollama_image_request(art_prompt, album_details['coverart'])
@@ -219,35 +206,13 @@ def generate_greeting(io_manager, weather, literature, album):
     greeting_length = _choose_greeting_length()
     logging.debug(f"Chosen target greeting length: {greeting_length} words")
 
-    synthesis_prompt = "Compose a whimsical, motivating morning wake-up message."
-
-    # Only use this blurb
-    if album or weather or literature:
-        synthesis_prompt += " Write based on the following source material:"
-        
-        if weather:
-            synthesis_prompt += f"\n\n{format_weather(weather)}"
-
-        if literature:
-            synthesis_prompt += f"\n\n{format_literature(literature)}"
-
-        if album:
-            synthesis_prompt += f"\n\n{format_album(album)}"
-
-        synthesis_prompt += "\n"
-
-        if weather:
-            synthesis_prompt += "\nThe listener can see and feel the current weather outside. Consider what imagery these conditions might invoke."
-            
-        if literature:
-            synthesis_prompt += "\nThe listener has NOT read the literature excerpt. Consider whether it has any distinctive structural or stylistic elements."
-            
-        if album:
-            synthesis_prompt += "\nThe album will be played for the listener. Consider the vibes it might cultivate."
-
-        synthesis_prompt += f"""Avoid references that are too specific or out of context, weave these elements into a unified vision.
-
-Aim for {greeting_length} words. Respond with the final greeting only and no other text, avoid enclosing quotes."""
+    synthesis_prompt = _render(
+        "synthesis.j2",
+        weather=weather,
+        literature=literature,
+        album=album,
+        greeting_length=greeting_length,
+    )
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt, Temperature.HIGH)
