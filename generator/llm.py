@@ -11,11 +11,13 @@ from enum import Enum
 
 from .config import Config
 
+REASONING = False
+
 
 class Temperature(Enum):
     LOW = 0.7
     MEDIUM = 1.0
-    HIGH = 2.0
+    HIGH = 1.5
 
 
 def _get_client():
@@ -39,7 +41,10 @@ def send_ollama_request(prompt, temp=Temperature.MEDIUM):
         response = _get_client().generate(
             model=Config.instance().ollama.multimodal_model,
             prompt=prompt,
-            think=False
+            think=REASONING,
+            options={
+                "temperature": temp.value
+            }
         )
         api_time = time.time() - start_time
         logging.debug(f"Ollama API call took {api_time:.2f}s")
@@ -77,9 +82,9 @@ def send_ollama_image_request(prompt, image_base64, temp=Temperature.MEDIUM):
             model=Config.instance().ollama.multimodal_model,
             prompt=prompt,
             images=[image_base64],
-            think=False,
+            think=REASONING,
             options={
-                "temperature": 0.7
+                "temperature": temp.value
             }
         )
         api_time = time.time() - start_time

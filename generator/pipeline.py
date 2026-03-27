@@ -10,6 +10,7 @@ Multi-stage LLM pipeline:
 
 import re
 import base64
+import math
 import random
 import logging
 
@@ -190,6 +191,16 @@ Respond with only the description, no other text. Use markdown bullet points."""
         logging.info("Album art analysis complete")
 
 
+def _choose_greeting_length():
+    min_len = 50
+    q1_len = 100
+    mean_len = 140
+
+    mu = math.log(mean_len)
+    sigma = math.log(mean_len) - math.log(q1_len)
+    return max(int(random.lognormvariate(mu, sigma)), min_len)
+
+
 def generate_greeting(io_manager, weather, literature, album):
     """
     Run synthesis layer to compose final greeting from inputs.
@@ -205,7 +216,10 @@ def generate_greeting(io_manager, weather, literature, album):
     """
     logging.info("Starting synthesis layer")
 
-    synthesis_prompt = "Compose a lengthy motivating morning wake-up call for Oscar."
+    greeting_length = _choose_greeting_length()
+    logging.debug(f"Chosen target greeting length: {greeting_length} words")
+
+    synthesis_prompt = "Compose a whimsical, motivating morning wake-up call for Oscar."
 
     # Only use this blurb
     if album or weather or literature:
@@ -229,9 +243,11 @@ def generate_greeting(io_manager, weather, literature, album):
             synthesis_prompt += "\nThe listener has NOT read the literature excerpt. Consider whether it has any distinctive structural or stylistic elements."
             
         if album:
-            synthesis_prompt += "\nThe listener has NOT seen or heard the album yet. Consider the vibes it might cultivate."
+            synthesis_prompt += "\nThe album will be played for the listener. Consider the vibes it might cultivate."
 
-        synthesis_prompt += "\n\nAvoid references that are too specific or out of context, weave these elements into a unified vision.\n\nRespond with the final greeting only and no other text, avoid enclosing quotes."
+        synthesis_prompt += f"""Avoid references that are too specific or out of context, weave these elements into a unified vision.
+
+Aim for {greeting_length} words. Respond with the final greeting only and no other text, avoid enclosing quotes."""
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
     greeting = send_ollama_request(synthesis_prompt, Temperature.HIGH)

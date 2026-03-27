@@ -24,7 +24,7 @@ from .config import Config
 BASE_DIR   = Path(os.environ.get("GREETING_BASE_DIR", "/"))
 DATA_DIR   = BASE_DIR / "data"
 MODEL_DIR  = BASE_DIR / "models"
-LOG_LEVEL  = logging.INFO
+LOG_LEVEL  = logging.DEBUG
 LOG_FMT = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
 
 
