@@ -9,7 +9,7 @@
 
 ## LLM improvements
 
-1. Figure out how to combine the two functions since they're redundant aside from the variable they use
+1. ~~Figure out how to combine the two functions since they're redundant aside from the variable they use~~
 2. ~~Add optional parameters for temperature, whether or not to use thinking~~
 3. ~~Implements specification and verification of json format~~ — decided against; current VERDICT pattern matching is simple and sufficient
 4. ~~Consider where to use thinking and where to use structured reasoning~~ — prompt structure already handles this; cutting thinking gave 5x speedup

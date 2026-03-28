@@ -17,8 +17,9 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from .config import Config
 from .data_sources import *
-from .llm import send_ollama_image_request, send_ollama_request, Temperature
+from .llm import send_ollama_request, Temperature
 
 _template_dir = Path(__file__).parent / "templates"
 _jinja_env = Environment(
@@ -166,7 +167,7 @@ def analyze_album_art(io_manager, album):
     art_prompt = _render("album_art.j2")
 
     io_manager.print_section("ALBUM ART - ANALYSIS PROMPT", art_prompt)
-    analysis = send_ollama_image_request(art_prompt, album_details['coverart'])
+    analysis = send_ollama_request(art_prompt, image_base64=album_details['coverart'])
 
     if analysis is None:
         logging.error("Cover art analysis failed")
@@ -178,13 +179,10 @@ def analyze_album_art(io_manager, album):
 
 
 def _choose_greeting_length():
-    min_len = 50
-    q1_len = 100
-    mean_len = 140
-
-    mu = math.log(mean_len)
-    sigma = math.log(mean_len) - math.log(q1_len)
-    return max(int(random.lognormvariate(mu, sigma)), min_len)
+    cfg = Config.instance().greeting
+    mu = math.log(cfg.mean_length)
+    sigma = math.log(cfg.mean_length) - math.log(cfg.q1_length)
+    return max(int(random.lognormvariate(mu, sigma)), cfg.min_length)
 
 
 def generate_greeting(io_manager, weather, literature, album):

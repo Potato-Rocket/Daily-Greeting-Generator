@@ -37,6 +37,13 @@ class NavidromeConfig:
 
 
 @dataclass
+class GreetingConfig:
+    min_length: int = 50
+    q1_length: int = 100
+    mean_length: int = 140
+
+
+@dataclass
 class LiteratureConfig:
     length: int = 600
     padding: int = 2000
@@ -55,6 +62,7 @@ class Config:
     weather: WeatherConfig = field(default_factory=WeatherConfig)
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     navidrome: NavidromeConfig = field(default_factory=NavidromeConfig)
+    greeting: GreetingConfig = field(default_factory=GreetingConfig)
     literature: LiteratureConfig = field(default_factory=LiteratureConfig)
     piper: PiperConfig = field(default_factory=PiperConfig)
 
@@ -78,6 +86,7 @@ class Config:
             weather=WeatherConfig(**data.get("weather", {})),
             ollama=OllamaConfig(**data.get("ollama", {})),
             navidrome=NavidromeConfig(**data.get("navidrome", {})),
+            greeting=GreetingConfig(**data.get("greeting", {})),
             literature=LiteratureConfig(**data.get("literature", {})),
             piper=PiperConfig(**data.get("piper", {})),
         )

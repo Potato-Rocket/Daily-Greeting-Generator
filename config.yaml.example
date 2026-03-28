@@ -17,6 +17,11 @@ navidrome:
   password: password
   client_name: DailyGreeting
 
+greeting:
+  min_length: 50
+  q1_length: 100
+  mean_length: 140
+
 literature:
   length: 600
   padding: 2000

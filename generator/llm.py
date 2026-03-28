@@ -24,34 +24,41 @@ def _get_client():
     return ollama.Client(host=Config.instance().ollama.host)
 
 
-def send_ollama_request(prompt, temp=Temperature.MEDIUM):
+def send_ollama_request(prompt, temp=Temperature.MEDIUM, image_base64=None):
     """
     Send a prompt to Ollama and return the response text.
 
     Args:
         prompt: The text prompt to send
+        temp: Temperature setting for generation
+        image_base64: Optional base64-encoded image string for vision requests
 
     Returns:
         str: LLM response text, or None on failure
     """
+    model = Config.instance().ollama.multimodal_model if image_base64 else Config.instance().ollama.text_model
+    request_type = "vision " if image_base64 else ""
+
     start_time = time.time()
-    logging.info(f"Sending request to Ollama ({Config.instance().ollama.text_model})")
+    logging.info(f"Sending {request_type}request to Ollama ({model})")
 
     try:
-        response = _get_client().generate(
-            model=Config.instance().ollama.multimodal_model,
-            prompt=prompt,
-            think=REASONING,
-            options={
-                "temperature": temp.value
-            }
-        )
+        kwargs = {
+            "model": model,
+            "prompt": prompt,
+            "think": REASONING,
+            "options": {"temperature": temp.value},
+        }
+        if image_base64:
+            kwargs["images"] = [image_base64]
+
+        response = _get_client().generate(**kwargs)
         api_time = time.time() - start_time
-        logging.debug(f"Ollama API call took {api_time:.2f}s")
+        logging.debug(f"Ollama {request_type}API call took {api_time:.2f}s")
 
         result = response.response
-        logging.debug(f"Received response ({len(result)} chars)")
-        logging.info("Ollama request completed successfully")
+        logging.debug(f"Received {request_type}response ({len(result)} chars)")
+        logging.info(f"Ollama {request_type}request completed successfully")
 
         return result
 
@@ -60,45 +67,4 @@ def send_ollama_request(prompt, temp=Temperature.MEDIUM):
         return None
     except Exception as e:
         logging.exception(f"Ollama request error: {e}")
-        return None
-
-
-def send_ollama_image_request(prompt, image_base64, temp=Temperature.MEDIUM):
-    """
-    Send a prompt with an image to Ollama and return the response text.
-
-    Args:
-        prompt: The text prompt to send
-        image_base64: Base64-encoded image string
-
-    Returns:
-        str: Vision model response text, or None on failure
-    """
-    start_time = time.time()
-    logging.info(f"Sending vision request to Ollama ({Config.instance().ollama.multimodal_model})")
-
-    try:
-        response = _get_client().generate(
-            model=Config.instance().ollama.multimodal_model,
-            prompt=prompt,
-            images=[image_base64],
-            think=REASONING,
-            options={
-                "temperature": temp.value
-            }
-        )
-        api_time = time.time() - start_time
-        logging.debug(f"Ollama vision API call took {api_time:.2f}s")
-
-        result = response.response
-        logging.debug(f"Received vision response ({len(result)} chars)")
-        logging.info("Ollama vision request completed successfully")
-
-        return result
-
-    except ollama.ResponseError as e:
-        logging.error(f"Ollama vision API error (status {e.status_code}): {e.error}")
-        return None
-    except Exception as e:
-        logging.exception(f"Ollama vision request error: {e}")
         return None
