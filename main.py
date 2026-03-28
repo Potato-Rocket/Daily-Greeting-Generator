@@ -1,5 +1,5 @@
+import json
 import threading
-import logging
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
 from generator.generator import run_pipeline
@@ -35,6 +35,15 @@ def view_date(date):
     has_audio = paths.audio_path.exists()
     has_coverart = paths.coverart_path.exists()
 
+    album_tooltip = None
+    if has_coverart and paths.data_path.exists():
+        try:
+            data = json.loads(paths.data_path.read_text())
+            album = data.get("album", {})
+            album_tooltip = f"{album['name']} — {album['artist']} ({album['year']})"
+        except (json.JSONDecodeError, KeyError):
+            pass
+
     return render_template(
         "viewer.html",
         dates=list(reversed(get_valid_dates(strict=False))),
@@ -44,6 +53,7 @@ def view_date(date):
         log=log,
         has_audio=has_audio,
         has_coverart=has_coverart,
+        album_tooltip=album_tooltip,
     )
 
 

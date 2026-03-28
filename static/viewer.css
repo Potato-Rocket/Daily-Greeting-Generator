@@ -1,0 +1,134 @@
+:root {
+  /* Page */
+  --bg:              #f5f0eb;
+  --text:            #2c2c2c;
+  --heading:         #4a3728;
+
+  /* Sidebar */
+  --nav-bg:          #3b3228;
+  --nav-text:        #d4c5b0;
+  --nav-link:        #bfae96;
+  --nav-hover:       #4a3f33;
+  --nav-active:      #5a4a3a;
+  --nav-active-text: #fff;
+  --nav-border:      #5a4a3a;
+
+  /* Cards & panels */
+  --card-bg:         #fff;
+  --card-shadow:     rgba(0,0,0,0.08);
+  --pre-border:      #ddd;
+
+  /* Accents */
+  --summary-text:    #6b5744;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+nav {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  padding: 1.2rem 0;
+  overflow-y: auto;
+}
+nav h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 1rem 0.8rem;
+  border-bottom: 1px solid var(--nav-border);
+  margin-bottom: 0.4rem;
+}
+nav a {
+  display: block;
+  padding: 0.35rem 1rem;
+  color: var(--nav-link);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+nav a:hover { background: var(--nav-hover); }
+nav a.active {
+  background: var(--nav-active);
+  color: var(--nav-active-text);
+  font-weight: bold;
+}
+
+/* Main content */
+main {
+  flex: 1;
+  padding: 2.5rem 3rem;
+  max-width: 52rem;
+}
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--heading);
+}
+
+/* Greeting */
+.greeting {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 2rem 2.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px var(--card-shadow);
+  line-height: 1.7;
+  font-size: 1.05rem;
+  white-space: pre-wrap;
+}
+
+/* Cover art + audio row */
+.media {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.media img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px var(--card-shadow);
+}
+audio { flex: 1; max-width: 28rem; }
+
+/* Log sections */
+details {
+  margin-bottom: 1rem;
+}
+summary {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: var(--summary-text);
+  margin-bottom: 0.4rem;
+}
+pre {
+  background: var(--card-bg);
+  border: 1px solid var(--pre-border);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  max-height: 30rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.missing {
+  color: #8a7a6a;
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
