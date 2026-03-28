@@ -3,7 +3,6 @@ services:
     image: daily-greeting:dev
     build: .
     container_name: daily-greeting-generator
-    env_file: .env
     volumes:
       - ./data:/data
       - ./config.ini:/config/config.ini

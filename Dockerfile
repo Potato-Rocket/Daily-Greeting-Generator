@@ -7,6 +7,7 @@ COPY config.yaml.example /config/config.yaml
 # Python files
 COPY requirements.txt main.py ./
 COPY generator/ ./generator/
+COPY templates/ ./templates/
 
 # Install Python requirements
 RUN pip install --no-cache-dir -r requirements.txt

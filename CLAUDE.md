@@ -1,12 +1,13 @@
 # Daily Greeting Generator
 
-Flask API that runs a multi-stage LLM pipeline — fetches weather, literature, and music data, synthesizes a personalized wake-up greeting via Ollama, then renders it to audio with Piper TTS.
+Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, and music data, synthesizes a personalized wake-up greeting via Ollama, then renders it to audio with Piper TTS. Includes a web UI for browsing past greetings.
 
 ## Architecture
 
 | Module | Role |
 |---|---|
-| `main.py` | Flask server (`/generate`, `/greeting`, `/audio/<date>`) |
+| `main.py` | Flask server — Web UI (`/`, `/view/<date>`) and JSON API (`/api/*`) |
+| `cli.py` | CLI entry point for local dev — loads `.env` then runs pipeline |
 | `generator/generator.py` | Pipeline runner — orchestrates stages in sequence |
 | `generator/pipeline.py` | LLM stages: literature validation, album selection, art analysis, synthesis |
 | `generator/data_sources.py` | External API fetchers (weather.gov, Gutendex, Navidrome) |
@@ -15,6 +16,20 @@ Flask API that runs a multi-stage LLM pipeline — fetches weather, literature, 
 | `generator/io_manager.py` | File I/O, path computation, logging setup |
 | `generator/config.py` | YAML config singleton with typed dataclasses |
 | `generator/templates/` | Jinja2 prompt templates (partials prefixed with `_`) |
+| `templates/viewer.html` | Web UI template — sidebar date nav, greeting card, media player, log panels |
+
+## Endpoints
+
+**Web UI:**
+- `GET /` — redirects to most recent greeting
+- `GET /view/<date>` — renders viewer with greeting text, audio, cover art, pipeline/execution logs
+
+**API:**
+- `GET /api/dates` — list of available dates (newest first)
+- `POST /api/generate` — trigger pipeline run (mutex-locked, returns 409 if busy)
+- `GET /api/greeting?date=&fallback=` — greeting data JSON
+- `GET /api/audio/<date>` — WAV file
+- `GET /api/coverart/<date>` — album cover JPEG
 
 ## Key Patterns
 
@@ -39,8 +54,9 @@ data/{YYYY-MM-DD}/
 
 ## Running
 
-- **Docker**: `docker compose up` (see `compose.yml`). Config mounted at `/config/`, data at `/data/`, models at `/models/`.
+- **Docker**: `docker compose up` (see `compose.yml`). Config mounted at `/config/`, data at `/data/`, Piper voice models at `/models/`.
 - **Local**: `python cli.py` (loads `.env` via python-dotenv).
+- **Server**: `python main.py` starts Flask on `0.0.0.0:5000`.
 - **Release**: `release.sh` builds, tags, and pushes the Docker image.
 
 ## Style Conventions

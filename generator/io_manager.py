@@ -73,11 +73,20 @@ class PathManager:
         self.log_path      = self.date_dir / f"log_{date_str}.txt"
         self.pipeline_path = self.date_dir / f"pipeline_{date_str}.txt"
     
-    def is_valid(self):
-        return (
-            self.data_path.exists() and
-            self.audio_path.exists()
-        )
+    def is_valid(self, strict=True):
+        if strict:
+            return self.data_path.exists() and self.audio_path.exists()
+        return self.log_path.exists()
+
+
+def get_valid_dates(strict=True):
+    """Return sorted list of date strings that have valid data (oldest first).
+
+    Args:
+        strict: If True, require data + audio files. If False, only require a log file.
+    """
+    date_strs = [d.name for d in DATA_DIR.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
+    return sorted(d for d in date_strs if PathManager(d).is_valid(strict))
 
 
 def get_paths(date_str, fallback=Mode.FAIL):
@@ -86,9 +95,7 @@ def get_paths(date_str, fallback=Mode.FAIL):
     except ValueError:
         pass  # literal date string
 
-    date_strs = [d.name for d in DATA_DIR.glob("20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")]
-    valid_strs = [d for d in date_strs if PathManager(d).is_valid()]
-    valid_strs.sort()
+    valid_strs = get_valid_dates()
 
     if not valid_strs:
         logging.error("No valid data paths found!")
