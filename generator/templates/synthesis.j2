@@ -1,29 +1,29 @@
 Compose a whimsical, motivating morning wake-up message.
-{% if album or weather or literature %}
+{%- if album or weather or literature %}
 Write based on the following source material:
-{% if weather %}
+{%- if weather %}
 
 {% include '_weather.j2' %}
-{% endif %}
-{% if literature %}
+{%- endif %}
+{%- if literature %}
 
 {% include '_literature.j2' %}
-{% endif %}
-{% if album %}
+{%- endif %}
+{%- if album %}
 
 {% include '_album.j2' %}
-{% endif %}
+{%- endif %}
 
-{% if weather %}
+{% if weather -%}
 The listener can see and feel the current weather outside. Consider what imagery these conditions might invoke.
-{% endif %}
-{% if literature %}
+{% endif -%}
+{%- if literature -%}
 The listener has NOT read the literature excerpt. Consider whether it has any distinctive structural or stylistic elements.
-{% endif %}
-{% if album %}
+{% endif -%}
+{%- if album -%}
 The album will be played for the listener. Consider the vibes it might cultivate.
-{% endif %}
+{% endif -%}
 Avoid references that are too specific or out of context, weave these elements into a unified vision.
 
 Aim for {{ greeting_length }} words. Respond with the final greeting only and no other text, avoid enclosing quotes.
-{% endif %}
+{%- endif %}

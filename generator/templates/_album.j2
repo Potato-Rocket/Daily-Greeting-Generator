@@ -1,10 +1,11 @@
 SELECTED ALBUM: "{{ album.name }}" by {{ album.artist }} ({{ album.year }})
 Genres: {{ album.genres | join(', ') if album.genres else 'Unknown genre' }}
 Tracklist:
-{% for song in album.songs %}
+{%- for song in album.songs %}
 {{ loop.index }}. {{ song.title }}
-{% endfor %}
-{% if album.coverart %}
+{%- endfor %}
+{%- if album.coverart %}
+
 Cover art description:
 {{ album.coverart }}
-{% endif %}
+{%- endif %}

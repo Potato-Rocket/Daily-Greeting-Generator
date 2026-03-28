@@ -1,14 +1,14 @@
-{% if literature %}
+{%- if literature %}
 Please select one and only one of the following albums which would pair most interestingly with the selected literary excerpt, whether by contrast or by complement.
-{% else %}
+{%- else %}
 Please select one and only one of the following albums which would be most interesting for a morning wake-up greeting.
-{% endif %}
+{%- endif %}
 
 {% include '_albums.j2' %}
-{% if literature %}
+{%- if literature %}
 
 {% include '_literature.j2' %}
-{% endif %}
+{%- endif %}
 
 Respond in the following format exactly:
 REASONING: Two or three sentences considering different options before deciding on the best choice.

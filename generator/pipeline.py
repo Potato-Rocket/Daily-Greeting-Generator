@@ -23,7 +23,6 @@ from .llm import send_ollama_image_request, send_ollama_request, Temperature
 _template_dir = Path(__file__).parent / "templates"
 _jinja_env = Environment(
     loader=FileSystemLoader(_template_dir),
-    trim_blocks=True,
     lstrip_blocks=True,
     keep_trailing_newline=False,
 )
