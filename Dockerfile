@@ -2,7 +2,7 @@ FROM python:3-slim
 WORKDIR /usr/src/app
 
 # Default config file in config directory
-COPY config.ini.example /config/config.ini
+COPY config.yaml.example /config/config.yaml
 
 # Python files
 COPY requirements.txt main.py ./
