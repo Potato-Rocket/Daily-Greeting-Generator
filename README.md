@@ -2,14 +2,14 @@
 
 An automated wake-up system that generates daily, personalized morning greeting messages by combining multiple data sources through a multi-stage LLM pipeline. The greeting is rendered to audio via Piper TTS and served through a Flask web app with a built-in viewer. Built with the aid of Claude Code, albeit with strong human supervision. Later revised and improved manually.
 
-While a simple recitation of the weather conditions as well as the day's obligations might be enough for some, others might prefer to begin their day with a bit more whimsy and unexpectedness.
+While a simple recitation of the weather conditions as well as the day's obligations might be enough for some, others might prefer to begin their day with a bit more whimsy. This script gathers input data from various sources before feeding it all into the LLM prompt, creating more variation and fun, unexpected results between each day's message.
 
 ### Pipeline
 
 1. **Weather** — Fetch from weather.gov API
-2. **Literature Validation** — Select random book from Gutendex API, use LLM to evaluate potential of random excerpt (max 5 attempts)
-3. **Album Selection** — Select 1 of 5 random albums based on how it pairs with literature excerpt (using Ollama LLM)
-4. **Album Art Analysis** — Get album cover art and generate text description (using LLM vision model)
+2. **Literature Validation** — Select random book using the Gutendex API, use LLM to evaluate potential of random excerpt (max 5 attempts)
+3. **Album Selection** — Select 1 of 5 random albums based on how it pairs with literature excerpt (using LLM)
+4. **Album Art Analysis** — Get cover art for selected album and generate text description (using multimodal LLM model)
 5. **Synthesis** — Compose morning greeting based on the weather, literature excerpt, and album info (using LLM)
 6. **TTS** — Generate audio with Piper TTS (random voice selection)
 
@@ -19,68 +19,65 @@ While a simple recitation of the weather conditions as well as the day's obligat
 2. **Literary excerpts** from random books via Gutendex API (Project Gutenberg)
 3. **Music metadata** from Navidrome server (selects 1 of 5 random albums, fetches details and describes album art for chosen album)
 
+Suggestions for other data sources are welcome! A future refactor making data sources more modular is planned.
+
 ### Web UI
 
-The Flask app includes a viewer at `/view/<date>` for browsing past greetings. It shows the greeting text, album cover art, audio player, and collapsible pipeline/execution logs, with a sidebar for navigating between dates.
+The Flask app includes a viewer for browsing past greetings. It shows the greeting text, album cover art, an audio player for the TTS generation, and collapsible pipeline/execution logs, with a sidebar for navigating between dates.
 
 ### Dependencies
 
-- Access to an Ollama server instance with text and vision models available
+- Access to an Ollama server instance with text and vision models available. A future refactor for compatibility with all OpenAI API servers is planned.
 - Access to a music server implementing the Subsonic API (e.g. Navidrome)
 
 If any external API requests fail, the system will degrade gracefully and attempt to format the daily greeting prompt without the missing sources.
 
 ## Setup
 
-### Docker (recommended)
+### Docker Compose
 
-```bash
-cp config.yaml.example config.yaml   # Edit with your settings
-docker compose up --build
+Docker images containing this application are available at [Docker Hub](https://hub.docker.com/repository/docker/potatorocket/daily-greeting/general). After making sure you have the latest version of [Docker](https://docs.docker.com/engine/install/) installed and running, copy the following to compose.yml:
+
+```yaml
+services:
+  generator:
+    image: docker.io/potatorocket/daily-greeting:latest
+    container_name: daily-greeting
+    volumes:
+      - /path/to/data:/data
+      - ./config.yaml:/config/config.yaml
+      - greeting-models:/models
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+ 
+volumes:
+  greeting-models:
 ```
 
-The container exposes port 5000. Config is mounted at `/config/`, output data at `/data/`, and Piper voice models at `/models/` (a default voice is bundled during the image build).
-
-### Local development
+In order to configure the server, download the example config then edit it to match your local configuration:
 
 ```bash
-pip install -r requirements.txt
-cp config.yaml.example config.yaml   # Edit with your settings
-python cli.py                        # Run pipeline once (loads .env)
-python main.py                       # Start Flask server on port 5000
+curl -o config.yaml https://raw.githubusercontent.com/Potato-Rocket/Daily-Greeting-Generator/refs/heads/main/config.yaml
+vim compose.yaml
+docker compose up -d
 ```
 
-### Release
+Your daily greeting server should now be running and accessible at `http://localhost:5000`. To update your configuration after editing config.yaml, run:
 
 ```bash
-./release.sh    # Builds, tags, and pushes the Docker image
+docker compose restart
 ```
-
-## Configuration
-
-Copy `config.yaml.example` to `config.yaml` and customize:
-
-**weather** — `lat`, `lon` (coordinates for forecasts), `user_agent` (identifier for weather.gov requests)
-
-**ollama** — `host` (server URL), `text_model` (e.g. `mistral:7b`), `multimodal_model` (e.g. `llava:7b`)
-
-**navidrome** — `base_url`, `username`, `password`, `client_name`
-
-**greeting** — `min_length`, `q1_length`, `mean_length` (log-normal word count distribution parameters for greeting generation)
-
-**literature** — `length` (excerpt length in characters), `padding` (buffer to avoid front/endmatter)
-
-**piper** — `voice` (`random` or specific voice name), `length_scale`, `noise_scale`, `noise_w_scale`
 
 ## API
 
-The Flask server (`main.py`) exposes a JSON API alongside the web viewer.
+The Flask server (`main.py`) exposes a JSON API alongside the web viewer. Note that dates must be formatted as `YYYY-MM-DD`. Only one greeting will be stored per day. If a second greeting is requested, the data from a previous greeting will be overwritten, though the pipline and execution logs will be appended to.
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/dates` | List available dates (newest first) |
 | `POST` | `/api/generate` | Trigger a pipeline run. Returns `409` if one is already in progress |
-| `GET` | `/api/greeting?date=<date>&fallback=<mode>` | Greeting data as JSON. Fallback mode: `first`, `last`, `random`, or `fail` (default) |
+| `GET` | `/api/greeting?date=<date>&fallback=<mode>` | Returns reeting data as JSON. Date: `<date>`, `first`, `last`, `random`. Fallback mode: `first`, `last`, `random`, or `fail` (default) |
 | `GET` | `/api/audio/<date>` | WAV audio file |
 | `GET` | `/api/coverart/<date>` | Album cover art JPEG |
 
@@ -88,13 +85,13 @@ The web viewer is at `/view/<date>` (or `/` to redirect to the most recent date)
 
 ## Monitoring
 
-```bash
-# View today's log
-tail -f data/$(date +%Y-%m-%d)/log_$(date +%Y-%m-%d).txt
+The most convenient way to see logs are in the web viewer or via:
 
-# View today's pipeline trace (LLM prompts/responses)
-less data/$(date +%Y-%m-%d)/pipeline_$(date +%Y-%m-%d).txt
+```bash
+docker compose logs
 ```
+
+If those methods are inoperable, the project's data is stored in plaintext and can be inspected directly. This is notably easier if you have mounted the data directory to a local folder.
 
 ## Data Layout
 
