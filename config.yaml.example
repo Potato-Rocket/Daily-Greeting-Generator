@@ -35,7 +35,7 @@ literature:
 
 # Options for TTS generation with Piper
 piper:
-  voice: random
+  voice: random       # The name of a Piper TTS model file, will try to download from Huggingface if unavailable locally
   length_scale: 1.15  # Slowed down for better comprehension when waking up
   noise_scale: 0.667  # Default noise scale
   noise_w_scale: 0.8  # Default noise_w scale
