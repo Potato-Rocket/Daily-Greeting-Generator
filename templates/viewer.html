@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Daily Greeting — {{ current_date }}</title>
+  <title>Daily Greeting — {{ current_date | format_date }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='viewer.css') }}">
 </head>
 <body>
   <nav>
     <h2>Dates</h2>
     {% for d in dates %}
-    <a href="/view/{{ d }}" {% if d == current_date %}class="active"{% endif %}>{{ d }}</a>
+    <a href="/view/{{ d }}" {% if d == current_date %}class="active"{% endif %}>{{ d|format_date }}</a>
     {% endfor %}
   </nav>
 
   <main>
-    <h1>{{ current_date }}</h1>
+    <h1>{{ current_date | format_date }}</h1>
 
     {% if greeting %}
     <div class="greeting">{{ greeting }}</div>

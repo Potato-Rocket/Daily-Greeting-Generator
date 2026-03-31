@@ -1,9 +1,19 @@
 import json
 import threading
+from datetime import datetime
+
+import humanize
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
 from generator.generator import run_pipeline
-from generator.io_manager import Mode, IOManager, PathManager, get_paths, get_valid_dates, setup_logging
+from generator.io_manager import (
+    IOManager,
+    Mode,
+    PathManager,
+    get_paths,
+    get_valid_dates,
+    setup_logging,
+)
 
 setup_logging()
 
@@ -11,15 +21,23 @@ app = Flask(__name__)
 _pipeline_lock = threading.Lock()
 
 
+@app.template_filter("format_date")
+def format_date(value):
+    """Convert 'YYYY-MM-DD' to 'January 1st, 2026'."""
+    dt = datetime.strptime(value, "%Y-%m-%d")
+    return f"{dt.strftime('%B')} {humanize.ordinal(dt.day)}, {dt.year}"
+
+
 # ---------------------------------------------------------------------------
 # Web UI
 # ---------------------------------------------------------------------------
+
 
 @app.route("/")
 def index():
     dates = list(reversed(get_valid_dates(strict=False)))
     if not dates:
-        return "No greetings found.", 404
+        return "no greetings found.", 404
     return redirect(url_for("view_date", date=dates[0]))
 
 
@@ -60,6 +78,7 @@ def view_date(date):
 # ---------------------------------------------------------------------------
 # API
 # ---------------------------------------------------------------------------
+
 
 @app.route("/api/dates")
 def dates():

@@ -50,5 +50,3 @@ Standardize source interface for extensibility.
 - Synthesis loops over active sources
 - Each source reads its own `[section]` from config
 - Replace raw requests with more reliable library API wrappers where applicable
-
-## Phase 8 — Strengthen testing and validation
