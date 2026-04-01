@@ -16,7 +16,9 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 | `generator/io_manager.py` | File I/O, path computation, logging setup |
 | `generator/config.py` | YAML config singleton with typed dataclasses |
 | `generator/templates/` | Jinja2 prompt templates (partials prefixed with `_`) |
+| `static/viewer.css` | Web UI stylesheet |
 | `templates/viewer.html` | Web UI template — sidebar date nav, greeting card, media player, log panels |
+| `tests/` | Standalone test scripts for individual pipeline stages (not pytest) |
 
 ## Endpoints
 
@@ -54,10 +56,19 @@ data/{YYYY-MM-DD}/
 
 ## Running
 
+- **Install**: `pip install -r requirements.txt` (production) or `pip install -r requirements-dev.txt` (adds python-dotenv for local dev).
 - **Docker**: `docker compose up` (see `compose.yml`). Config mounted at `/config/`, data at `/data/`, Piper voice models at `/models/`.
 - **Local**: `python cli.py` (loads `.env` via python-dotenv).
 - **Server**: `python main.py` starts Flask on `0.0.0.0:5000`.
 - **Release**: `release.sh` builds, tags, and pushes the Docker image.
+
+## Testing
+
+Scripts in `tests/` are standalone — they test individual stages using real data files, not pytest/unittest. Run with:
+
+```bash
+python tests/test_tts.py $(date +"%Y-%m-%d")
+```
 
 ## Style Conventions
 
