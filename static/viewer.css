@@ -18,6 +18,9 @@
   --card-shadow:     rgba(0,0,0,0.08);
   --pre-border:      #ddd;
 
+  /* Missing */
+  --missing-text: #8a7a6a;
+
   /* Accents */
   --summary-text:    #6b5744;
 }
@@ -127,7 +130,7 @@ pre {
   word-wrap: break-word;
 }
 .missing {
-  color: #8a7a6a;
+  color: --missing-text;
   font-style: italic;
   font-size: 0.95rem;
   margin-bottom: 1rem;

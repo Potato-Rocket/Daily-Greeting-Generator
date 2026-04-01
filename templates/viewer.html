@@ -10,7 +10,7 @@
   <nav>
     <h2>Dates</h2>
     {% for d in dates %}
-    <a href="/view/{{ d }}" {% if d == current_date %}class="active"{% endif %}>{{ d|format_date }}</a>
+    <a href="/view/{{ d }}" {% if d == current_date %}class="active"{% endif %}>{{ d | format_date }}</a>
     {% endfor %}
   </nav>
 
