@@ -1,24 +1,17 @@
 #!/bin/bash
 # Tag a git release and push Docker image
-# Usage: ./release.sh 0.1.0 -m "Containerized generator with Piper TTS"
+# Usage: ./release.sh -m "Release message"
+# Version is read from pyproject.toml — bump it there before releasing.
 
 set -e
 
 DOCKER_USER="potatorocket"
 IMAGE_NAME="daily-greeting"
 
-# Check that version argument is provided
-if [ -z "$1" ]; then
-    echo "Usage: ./release.sh VERSION [-m \"message\"]"
-    echo "Example: ./release.sh 0.1.0 -m \"Containerized generator with Piper TTS\""
-    echo "If the tag already exists, -m is not required."
-    exit 1
-fi
-
-VERSION=$1
+VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
 
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Error: Version must follow semver (e.g. 0.1.0, 1.2.3)"
+    echo "Error: Version in pyproject.toml must follow semver (e.g. 0.1.0, 1.2.3)"
     exit 1
 fi
 
@@ -28,11 +21,12 @@ if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
     echo "Tag v${VERSION} already exists, skipping git tag"
 else
     TAG_EXISTS=false
-    if [ "$2" != "-m" ] || [ -z "$3" ]; then
-        echo "Error: New tags require a message: ./release.sh ${VERSION} -m \"message\""
+    if [ "$1" != "-m" ] || [ -z "$2" ]; then
+        echo "Usage: ./release.sh -m \"Release message\""
+        echo "Bump the version in pyproject.toml before running."
         exit 1
     fi
-    MESSAGE="$3"
+    MESSAGE="$2"
 
     # Fail if working tree is dirty
     if [ -n "$(git status --porcelain)" ]; then

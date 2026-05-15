@@ -1,7 +1,0 @@
-requests
-ollama
-piper-tts
-flask
-pyyaml
-jinja2
-humanize
