@@ -2,6 +2,12 @@ import json
 import threading
 from datetime import datetime
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 import humanize
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
