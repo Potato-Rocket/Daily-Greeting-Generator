@@ -15,7 +15,7 @@ Replace cron-triggered script with persistent service.
   - ~~`POST /generate` — blocking, deduplicated (lock + check)~~
   - ~~`GET /greeting?fallback=fail|last|random` — returns metadata JSON~~
   - ~~`GET /audio/<date>` — returns WAV~~
-- `cli.py` for local testing, calls same orchestrator
+- ~~`cli.py` for local testing, calls same orchestrator~~
 - ~~Update Dockerfile to `EXPOSE` port~~
 
 ## Phase 3 — Publish & Deploy
@@ -32,11 +32,13 @@ HA orchestrates scheduling and playback, replacing playback server.
 - ~~Retire `check_sunrise.sh` and Flask playback receiver~~
 
 ## Phase 5 — Config Split
-Separate infrastructure/secrets from behavioral tuning.
-- Env vars: URLs, credentials, coordinates
-- Mounted `config.ini`: model names, excerpt length, album count
-- Update `config.py` to layer: defaults → config.ini → env vars
-- Create `.env.example`, update `config.ini.example`
+~~Separate infrastructure/secrets from behavioral tuning.~~
+- ~~Env vars: URLs, credentials, coordinates~~
+- ~~Mounted `config.yaml`: model names, excerpt length, album count~~
+- ~~Update `config.py` to layer: defaults → config.yaml → env vars~~
+- ~~Create `.env.example`, update `config.yaml.example`~~
+- ~~Migrate to uv; drop requirements.txt~~
+- ~~Sync version across pyproject.toml / git tags / `generator/__init__.py`~~
 
 ## Phase 6 — Pipeline improvements
 - Switch to using generic OpenAPI with library
