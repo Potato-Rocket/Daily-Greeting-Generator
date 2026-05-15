@@ -1,9 +1,9 @@
 """
 Configuration Module for Daily Greeting Generator
 
-Loads settings from config.yaml with typed defaults via dataclasses.
-Env vars (GREETING_BASE_DIR, GREETING_CONFIG_DIR) set paths; everything
-else lives in config.yaml and is re-read each generation.
+Three-layer config: code defaults → config.yaml → env vars (highest priority).
+Env vars control infrastructure and secrets; config.yaml controls behavioral tuning.
+See .env.example for the full list of supported env vars.
 """
 
 import os
@@ -76,13 +76,15 @@ class Config:
 
         if not config_path.exists():
             logging.info("No config file found, using defaults")
-            cls._instance = cls()
+            instance = cls()
+            cls._apply_env_overrides(instance)
+            cls._instance = instance
             return cls._instance
 
         with open(config_path) as f:
             data = yaml.safe_load(f) or {}
 
-        cls._instance = cls(
+        instance = cls(
             weather=WeatherConfig(**data.get("weather", {})),
             ollama=OllamaConfig(**data.get("ollama", {})),
             navidrome=NavidromeConfig(**data.get("navidrome", {})),
@@ -90,8 +92,27 @@ class Config:
             literature=LiteratureConfig(**data.get("literature", {})),
             piper=PiperConfig(**data.get("piper", {})),
         )
+        cls._apply_env_overrides(instance)
         logging.debug(f"Loaded config from {config_path}")
+        cls._instance = instance
         return cls._instance
+
+    # Maps env var name → (section, field, cast)
+    _ENV_OVERRIDES = {
+        "GREETING_WEATHER_LAT":    ("weather",   "lat",      float),
+        "GREETING_WEATHER_LON":    ("weather",   "lon",      float),
+        "GREETING_OLLAMA_HOST":    ("ollama",    "host",     str),
+        "GREETING_NAVIDROME_URL":  ("navidrome", "base_url", str),
+        "GREETING_NAVIDROME_USER": ("navidrome", "username", str),
+        "GREETING_NAVIDROME_PASS": ("navidrome", "password", str),
+    }
+
+    @classmethod
+    def _apply_env_overrides(cls, instance: "Config") -> None:
+        for var, (section, field_name, cast) in cls._ENV_OVERRIDES.items():
+            if val := os.environ.get(var):
+                setattr(getattr(instance, section), field_name, cast(val))
+                logging.debug(f"Config override from env: {var}")
 
     @classmethod
     def instance(cls) -> "Config":

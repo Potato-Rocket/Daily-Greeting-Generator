@@ -1,41 +1,39 @@
-# Daily Greeting Configuration
-# Copy to config.yaml and customize for your environment
+# Daily Greeting — Behavioral Configuration
+# Copy to config.yaml and mount at /config/config.yaml
+#
+# Infrastructure settings (URLs, credentials, coordinates) belong in .env,
+# not here. See .env.example for the full list.
 
 # Options for the weather.gov API
 weather:
-  # Set to your location (or whatever location you want it to see the weather for)
-  lat: 0.0
-  lon: 0.0
   user_agent: DailyGreeting/0.4.0
+  # lat/lon: set via GREETING_WEATHER_LAT / GREETING_WEATHER_LON
 
 # Options for the Ollama API
 ollama:
-  host: http://localhost:11434
-  text_model: mistral:7b        # The model you want to use for text-only requests
-  multimodal_model: llava:7b    # The model you want to use for the coverart analysis request
+  # host: set via GREETING_OLLAMA_HOST
+  text_model: mistral:7b        # Model for text-only requests
+  multimodal_model: llava:7b    # Model for cover art analysis
 
 # Options for the Subsonic API
 navidrome:
-  base_url: http://localhost:4533
-  username: username
-  password: password
+  # URL, username, password: set via GREETING_NAVIDROME_URL / _USER / _PASS
   client_name: DailyGreeting
 
-# Target greeting length, in word count, is determined by a random lognormal distribution
-# These parameters aren't quite accurate because I kept my math simple, but do give rough control over the distribution
+# Target greeting length in word count, drawn from a lognormal distribution
 greeting:
-  min_length: 50    # The minimum cutoff greeting length
-  q1_length: 100    # The first quartile greeting lenth
-  mean_length: 140  # The mean greeting length
+  min_length: 50    # Minimum cutoff
+  q1_length: 100    # First quartile
+  mean_length: 140  # Mean
 
 # Options for literature excerpt selection
 literature:
-  length: 600    # The length of the selected excerpt in characters
-  padding: 2000  # The characters to strip from the front/end of the chosen book, to remove front/end matter
+  length: 600    # Excerpt length in characters
+  padding: 2000  # Characters stripped from front/end of book to remove front/end matter
 
 # Options for TTS generation with Piper
 piper:
-  voice: random       # The name of a Piper TTS model file, will try to download from Huggingface if unavailable locally
+  voice: random       # Piper TTS model name, or "random" to pick from available voices
   length_scale: 1.15  # Slowed down for better comprehension when waking up
-  noise_scale: 0.667  # Default noise scale
-  noise_w_scale: 0.8  # Default noise_w scale
+  noise_scale: 0.667
+  noise_w_scale: 0.8

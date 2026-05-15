@@ -32,11 +32,39 @@ The Flask app includes a viewer for browsing past greetings. It shows the greeti
 
 If any external API requests fail, the system will degrade gracefully and attempt to format the daily greeting prompt without the missing sources.
 
+## Configuration
+
+Configuration is split into two layers:
+
+| Layer | File | What goes here |
+|---|---|---|
+| Secrets & infrastructure | `.env` | URLs, credentials, coordinates — anything deployment-specific or sensitive |
+| Behavioral tuning | `config.yaml` | Model names, excerpt lengths, TTS parameters — project-specific but not secret |
+
+Env vars take precedence over `config.yaml`, which takes precedence over built-in defaults. This means you can run without a `config.yaml` if you set the required env vars, or without a `.env` if you put everything in `config.yaml`.
+
+### Env vars (`.env`)
+
+Copy `.env.example` to `.env` and fill in your values:
+
+| Variable | Description |
+|---|---|
+| `GREETING_WEATHER_LAT` / `GREETING_WEATHER_LON` | Your location for weather.gov |
+| `GREETING_OLLAMA_HOST` | Ollama server URL |
+| `GREETING_NAVIDROME_URL` | Navidrome server URL |
+| `GREETING_NAVIDROME_USER` / `GREETING_NAVIDROME_PASS` | Navidrome credentials |
+| `GREETING_BASE_DIR` | Root for `data/` and `models/` (default: `/`) |
+| `GREETING_CONFIG_DIR` | Directory containing `config.yaml` (default: `/config/`) |
+
+### Behavioral config (`config.yaml`)
+
+Copy `config.yaml.example` to `config.yaml` and adjust to taste. This file controls model selection, greeting length targets, literature excerpt size, and Piper TTS parameters. It does not need to contain credentials.
+
 ## Setup
 
 ### Docker Compose
 
-Docker images containing this application are available at [Docker Hub](https://hub.docker.com/repository/docker/potatorocket/daily-greeting/general). After making sure you have the latest version of [Docker](https://docs.docker.com/engine/install/) installed and running, copy the following to compose.yml:
+Docker images are available at [Docker Hub](https://hub.docker.com/repository/docker/potatorocket/daily-greeting/general). After installing [Docker](https://docs.docker.com/engine/install/), copy the following to `compose.yml`:
 
 ```yaml
 services:
@@ -47,23 +75,27 @@ services:
       - /path/to/data:/data
       - ./config.yaml:/config/config.yaml
       - greeting-models:/models
+    env_file:
+      - path: .env
+        required: false
     ports:
       - "5000:5000"
     restart: unless-stopped
- 
+
 volumes:
   greeting-models:
 ```
 
-In order to configure the server, download the example config then edit it to match your local configuration:
+Then fetch the example files, fill them in, and start the service:
 
 ```bash
-curl -o config.yaml https://raw.githubusercontent.com/Potato-Rocket/Daily-Greeting-Generator/refs/heads/main/config.yaml
-vim compose.yaml
+curl -o config.yaml https://raw.githubusercontent.com/Potato-Rocket/Daily-Greeting-Generator/refs/heads/main/config.yaml.example
+curl -o .env https://raw.githubusercontent.com/Potato-Rocket/Daily-Greeting-Generator/refs/heads/main/.env.example
+# Edit both files with your values
 docker compose up -d
 ```
 
-Your daily greeting server should now be running and accessible at `http://localhost:5000`. To update your configuration after editing config.yaml, run:
+Your server will be running at `http://localhost:5000`. After editing either config file, restart to apply changes:
 
 ```bash
 docker compose restart
