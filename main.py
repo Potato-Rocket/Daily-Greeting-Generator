@@ -86,6 +86,11 @@ def view_date(date):
 # ---------------------------------------------------------------------------
 
 
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"}), 200
+
+
 @app.route("/api/dates")
 def dates():
     return jsonify(list(reversed(get_valid_dates())))
