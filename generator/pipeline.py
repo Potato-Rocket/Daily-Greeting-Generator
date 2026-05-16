@@ -212,15 +212,23 @@ def generate_greeting(io_manager, weather, literature, album):
     )
     
     io_manager.print_section("SYNTHESIS - PROMPT", synthesis_prompt)
-    greeting = send_ollama_request(synthesis_prompt, Temperature.HIGH)
+    response = send_ollama_request(synthesis_prompt, Temperature.HIGH)
 
-    if greeting is None:
+    if response is None:
         logging.error("Ollama request failed during synthesis")
         return None
 
-    io_manager.print_section("SYNTHESIS - RESPONSE", greeting)
+    io_manager.print_section("SYNTHESIS - RESPONSE", response)
 
-    final_greeting = greeting.strip()
+    # Parse REASONING and GREETING sections
+    greeting_match = re.search(r'GREETING:\s*(.*)', response, re.DOTALL | re.IGNORECASE)
+
+    if not greeting_match:
+        logging.warning("Failed to parse GREETING from synthesis response, using full response")
+        final_greeting = response.strip()
+    else:
+        final_greeting = greeting_match.group(1).strip()
+
     # Remove surrounding quotes if present
     if final_greeting.startswith('"') and final_greeting.endswith('"'):
         final_greeting = final_greeting[1:-1]

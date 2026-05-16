@@ -41,9 +41,7 @@ HA orchestrates scheduling and playback, replacing playback server.
 - ~~Sync version across pyproject.toml / git tags / `generator/__init__.py`~~
 
 ## Phase 6 — Pipeline improvements
-- Switch to using generic OpenAPI with library
-- Improve templating, integration with thinking models
-- Tweak prompt engineering
+- ~~Tweak prompt engineering~~
 
 ## Phase 7 — DataSource Refactor
 Standardize source interface for extensibility.

@@ -1,7 +1,9 @@
 services:
   generator:
     image: daily-greeting:dev
-    build: .
+    build:
+      context: .
+      network: host
     container_name: daily-greeting-generator
     volumes:
       - ./data:/data
