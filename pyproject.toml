@@ -1,6 +1,6 @@
 [project]
 name = "daily-greeting"
-version = "0.5.0"
+version = "0.5.1"
 description = "Personalized wake-up greeting generator: combines weather, literature, and music through a multi-stage LLM pipeline, rendered to audio via Piper TTS and served through a Flask web app."
 requires-python = ">=3.14"
 dependencies = [
