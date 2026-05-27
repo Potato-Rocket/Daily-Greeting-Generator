@@ -19,6 +19,7 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 | `static/viewer.css` | Web UI stylesheet |
 | `templates/viewer.html` | Web UI template — sidebar date nav, greeting card, media player, log panels |
 | `tests/` | Standalone test scripts for individual pipeline stages (not pytest) |
+| `demo-server/` | Lightweight Go HTTP server — read-only API serving the most recent greeting for the Cloudflare Worker |
 
 ## Endpoints
 

@@ -101,6 +101,30 @@ Your server will be running at `http://localhost:5000`. After editing either con
 docker compose restart
 ```
 
+## Demo Server
+
+A lightweight read-only Go HTTP server lives in `demo-server/`. It serves the most recent greeting's data over HTTP so that an external Cloudflare Worker can sync it to edge storage for the portfolio site. It exposes no write endpoints and mounts the data directory read-only.
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/greeting/latest` | JSON — date, greeting text, execution log, pipeline log, album info, weather |
+| `GET /api/greeting/audio` | WAV audio file for the most recent greeting |
+| `GET /api/greeting/cover` | Album cover art JPEG for the most recent greeting |
+| `GET /health` | Health check |
+
+A Docker image is available at `potatorocket/greeting-demo:latest`. Add it alongside the main container:
+
+```yaml
+  greeting-demo:
+    image: potatorocket/greeting-demo:latest
+    container_name: greeting-demo
+    volumes:
+      - /path/to/data:/data:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+```
+
 ## API
 
 The Flask server (`main.py`) exposes a JSON API alongside the web viewer. Note that dates must be formatted as `YYYY-MM-DD`. Only one greeting will be stored per day. If a second greeting is requested, the data from a previous greeting will be overwritten, though the pipline and execution logs will be appended to.
