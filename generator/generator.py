@@ -32,6 +32,7 @@ def run_pipeline():
     # Initialize I/O manager with context manager to ensure pipeline file is opened/closed
     with IOManager() as io_manager:
         logging.info("=== PIPELINE START ===")
+        io_manager.update_data_file(date=io_manager.paths.date_str)
 
         try:
             # Stage 1: Weather data
@@ -72,7 +73,6 @@ def run_pipeline():
                 return
 
             io_manager.save_greeting(greeting)
-            io_manager.update_data_file(greeting=greeting)
             logging.info("Greeting generated and saved")
 
             # Stage 6: TTS synthesis

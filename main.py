@@ -124,7 +124,8 @@ def greeting():
     if not data:
         return jsonify({"status": "error", "message": "Failed to load data"}), 500
 
-    data["date"] = paths.date_str
+    data.setdefault("date", paths.date_str)
+    data["greeting"] = paths.greeting_path.read_text() if paths.greeting_path.exists() else ""
     data["pipeline"] = paths.pipeline_path.read_text() if paths.pipeline_path.exists() else ""
     data["log"] = paths.log_path.read_text() if paths.log_path.exists() else ""
     return jsonify(data)
