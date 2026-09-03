@@ -105,7 +105,7 @@ wheels = [
 
 [[package]]
 name = "daily-greeting"
-version = "0.5.0"
+version = "0.5.1"
 source = { virtual = "." }
 dependencies = [
     { name = "flask" },
