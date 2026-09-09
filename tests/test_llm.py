@@ -6,7 +6,10 @@ and runs only the synthesis and composition stages. Useful for testing prompt ch
 without hitting external APIs.
 
 Usage:
-    python test_llm.py $(date +\"%Y-%m-%d\")
+    python tests/test_llm.py [date]
+
+    date  Date to load data from (YYYY-MM-DD). Defaults to the most recently
+          generated greeting.
 """
 
 import sys
@@ -16,35 +19,34 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from generator.config import load_config, apply_config
-from generator.io_manager import IOManager, setup_logging
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+from generator.config import Config
+from generator.io_manager import IOManager, setup_logging, get_paths, Mode
 from generator.pipeline import generate_greeting
 
 
 def main():
     """Run the test pipeline using stored data."""
 
-    if len(sys.argv) > 1:
-        DATE = sys.argv[1]
-    else:
-        print("Error: No date specified!\n\nUsage:\n    python test_llm.py $(date +\"%Y-%m-%d\")")
+    date_arg = sys.argv[1] if len(sys.argv) > 1 else None
+
+    setup_logging()
+    Config.load()
+
+    paths, error = get_paths(date_arg or Mode.LAST)
+    if error:
+        print(f"Error: {error}")
         sys.exit(1)
-    
-    # Setup basic logging first
-    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
-    base_dir = Path(__file__).parent.parent
-
-    # Load configuration overrides
-    config = load_config(base_dir)
-    apply_config(config)
-
-    # Initialize I/O manager and full logging
-    io_manager = IOManager(base_dir, date_str=DATE)
-    setup_logging(io_manager, logging.DEBUG)
+    io_manager = IOManager(paths)
 
     logging.info("=== TEST PIPELINE START ===")
-    logging.info(f"Loading data from {io_manager.date_str}")
+    logging.info(f"Loading data from {io_manager.paths.date_str}")
 
     try:
         # Load stored data
