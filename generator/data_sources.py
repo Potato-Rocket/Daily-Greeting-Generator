@@ -126,7 +126,7 @@ def get_random_literature(length=None, padding=None):
         random_page = int(random.expovariate(0.05)) + 1
         logging.info(f"Fetching literature from Gutendex (page {random_page})")
 
-        api_url = f"https://gutendex.com/books/?languages=en&page={random_page}"
+        api_url = f"{Config.instance().literature.gutendex_url}/books/?languages=en&page={random_page}"
         response = requests.get(api_url, timeout=TIMEOUT)
         logging.debug(f"Gutendex API call took {time.time() - start_time:.2f}s")
 

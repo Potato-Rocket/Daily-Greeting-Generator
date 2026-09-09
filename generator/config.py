@@ -45,6 +45,7 @@ class GreetingConfig:
 
 @dataclass
 class LiteratureConfig:
+    gutendex_url: str = "https://gutendex.com"
     length: int = 600
     padding: int = 2000
 
@@ -105,6 +106,7 @@ class Config:
         "GREETING_NAVIDROME_URL":  ("navidrome", "base_url", str),
         "GREETING_NAVIDROME_USER": ("navidrome", "username", str),
         "GREETING_NAVIDROME_PASS": ("navidrome", "password", str),
+        "GREETING_GUTENDEX_URL":   ("literature", "gutendex_url", str),
     }
 
     @classmethod
