@@ -5,4 +5,5 @@ config.yaml
 data/
 .venv/
 models/
-.vscode/browse*
+.vscode/
+.claude/
