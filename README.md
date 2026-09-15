@@ -1,8 +1,8 @@
 # Daily Greeting Generator
 
-An automated wake-up system that generates daily, personalized morning greeting messages by combining multiple data sources through a multi-stage LLM pipeline. The greeting is rendered to audio via Piper TTS and served through a Flask web app with a built-in viewer. Built with the aid of Claude Code, albeit with strong human supervision. Later revised and improved manually.
+An automated wake-up system that generates daily, personalized morning greeting messages by combining multiple data sources through a multi-stage LLM pipeline. The greeting is rendered to audio via Piper TTS and served through a Flask web app with a built-in viewer.
 
-While a simple recitation of the weather conditions as well as the day's obligations might be enough for some, others might prefer to begin their day with a bit more whimsy. This script gathers input data from various sources before feeding it all into the LLM prompt, creating more variation and fun, unexpected results between each day's message.
+While a simple recitation of the weather conditions and the day's obligations might be enough for some, others might prefer to begin their day with a bit more whimsy. This script gathers input data from various sources before feeding it all into the local LLM pipeline, creating more variation between each day's message.
 
 ### Pipeline
 
@@ -51,6 +51,7 @@ Copy `.env.example` to `.env` and fill in your values:
 |---|---|
 | `GREETING_WEATHER_LAT` / `GREETING_WEATHER_LON` | Your location for weather.gov |
 | `GREETING_OLLAMA_HOST` | Ollama server URL |
+| `GREETING_GUTENDEX_URL` | Gutendex server URL |
 | `GREETING_NAVIDROME_URL` | Navidrome server URL |
 | `GREETING_NAVIDROME_USER` / `GREETING_NAVIDROME_PASS` | Navidrome credentials |
 | `GREETING_BASE_DIR` | Root for `data/` and `models/` (default: `/`) |
@@ -101,39 +102,16 @@ Your server will be running at `http://localhost:5000`. After editing either con
 docker compose restart
 ```
 
-## Demo Server
-
-A lightweight read-only Go HTTP server lives in `demo-server/`. It serves the most recent greeting's data over HTTP so that an external Cloudflare Worker can sync it to edge storage for the portfolio site. It exposes no write endpoints and mounts the data directory read-only.
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/greeting/latest` | JSON — date, greeting text, execution log, pipeline log, album info, weather |
-| `GET /api/greeting/audio` | WAV audio file for the most recent greeting |
-| `GET /api/greeting/cover` | Album cover art JPEG for the most recent greeting |
-| `GET /health` | Health check |
-
-A Docker image is available at `potatorocket/greeting-demo:latest`. Add it alongside the main container:
-
-```yaml
-  greeting-demo:
-    image: potatorocket/greeting-demo:latest
-    container_name: greeting-demo
-    volumes:
-      - /path/to/data:/data:ro
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
-```
-
 ## API
 
 The Flask server (`main.py`) exposes a JSON API alongside the web viewer. Note that dates must be formatted as `YYYY-MM-DD`. Only one greeting will be stored per day. If a second greeting is requested, the data from a previous greeting will be overwritten, though the pipline and execution logs will be appended to.
 
 | Method | Endpoint | Description |
 |---|---|---|
+| `GET` | `/health` | Health check |
 | `GET` | `/api/dates` | List available dates (newest first) |
 | `POST` | `/api/generate` | Trigger a pipeline run. Returns `409` if one is already in progress |
-| `GET` | `/api/greeting?date=<date>&fallback=<mode>` | Returns reeting data as JSON. Date: `<date>`, `first`, `last`, `random`. Fallback mode: `first`, `last`, `random`, or `fail` (default) |
+| `GET` | `/api/greeting?date=<date>&fallback=<mode>` | Returns greeting data as JSON. Date: `<date>`, `first`, `last`, `random`. Fallback mode: `first`, `last`, `random`, or `fail` (default) |
 | `GET` | `/api/audio/<date>` | WAV audio file |
 | `GET` | `/api/coverart/<date>` | Album cover art JPEG |
 
@@ -155,7 +133,7 @@ Each run produces a date-stamped directory under `data/`:
 
 ```
 data/{YYYY-MM-DD}/
-  data_{date}.json      # Pipeline output (all stages)
+  data_{date}.json      # Pipeline input data
   greeting_{date}.txt   # Final greeting text
   greeting_{date}.wav   # Audio file
   book_{date}.txt       # Full book text

@@ -10,7 +10,7 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 | `cli.py` | CLI entry point for local dev — loads `.env` then runs pipeline |
 | `generator/generator.py` | Pipeline runner — orchestrates stages in sequence |
 | `generator/pipeline.py` | LLM stages: literature validation, album selection, art analysis, synthesis |
-| `generator/data_sources.py` | External API fetchers (weather.gov, Gutendex, Navidrome) |
+| `generator/data_sources.py` | External API fetchers (weather.gov, Gutendex, Navidrome) — Gutendex URL configurable via `GREETING_GUTENDEX_URL` (defaults to `https://gutendex.com`) |
 | `generator/llm.py` | Ollama interface (text + vision) |
 | `generator/tts.py` | Piper TTS synthesis with voice fallback |
 | `generator/io_manager.py` | File I/O, path computation, logging setup |
@@ -19,7 +19,6 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 | `static/viewer.css` | Web UI stylesheet |
 | `templates/viewer.html` | Web UI template — sidebar date nav, greeting card, media player, log panels |
 | `tests/` | Standalone test scripts for individual pipeline stages (not pytest) |
-| `demo-server/` | Lightweight Go HTTP server — read-only API serving the most recent greeting for the Cloudflare Worker |
 
 ## Endpoints
 
@@ -28,6 +27,7 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 - `GET /view/<date>` — renders viewer with greeting text, audio, cover art, pipeline/execution logs
 
 **API:**
+- `GET /health` — health check
 - `GET /api/dates` — list of available dates (newest first)
 - `POST /api/generate` — trigger pipeline run (mutex-locked, returns 409 if busy)
 - `GET /api/greeting?date=&fallback=` — greeting data JSON
@@ -36,7 +36,7 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 
 ## Key Patterns
 
-- **Config singleton**: `Config.instance()` returns typed dataclasses loaded from `config.yaml`. Env vars (`GREETING_BASE_DIR`, `GREETING_CONFIG_DIR`) set paths; YAML controls behavior. Re-loaded each generation via `Config.load()`.
+- **Config singleton**: `Config.instance()` returns typed dataclasses loaded from `config.yaml`. Env vars (`GREETING_BASE_DIR`, `GREETING_CONFIG_DIR`) set paths; YAML controls behavior. Re-loaded each generation via `Config.load()`. Infrastructure URLs (Ollama, Navidrome, Gutendex) are set via env vars — see `.env.example`.
 - **Path/IO split**: `PathManager` is pure path computation (no side effects). `IOManager` handles file writes and is used as a context manager.
 - **Graceful degradation**: Each pipeline stage handles missing data and continues — weather, literature, or music can fail independently without aborting the pipeline.
 - **LLM response parsing**: `VERDICT` keyword pattern matching (e.g. `VERDICT: YES`, `VERDICT: 3`).
@@ -46,7 +46,7 @@ Flask app that runs a multi-stage LLM pipeline — fetches weather, literature, 
 
 ```
 data/{YYYY-MM-DD}/
-  data_{date}.json      # Pipeline output (all stages)
+  data_{date}.json      # Pipeline input data (date, weather, album)
   greeting_{date}.txt   # Final text
   greeting_{date}.wav   # Audio
   book_{date}.txt       # Full book text
