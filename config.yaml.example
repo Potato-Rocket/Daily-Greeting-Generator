@@ -25,6 +25,7 @@ greeting:
   min_length: 50    # Minimum cutoff
   q1_length: 100    # First quartile
   mean_length: 140  # Mean
+  max_sentence_words: 100  # Run-on sentences are truncated to this before TTS
 
 # Options for literature excerpt selection
 literature:

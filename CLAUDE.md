@@ -61,7 +61,7 @@ data/{YYYY-MM-DD}/
 - **Docker**: `docker compose up` (see `compose.yml`). Config mounted at `/config/`, data at `/data/`, Piper voice models at `/models/`.
 - **Local**: `python cli.py` (loads `.env` via python-dotenv).
 - **Server**: `python main.py` starts Flask on `0.0.0.0:5000`.
-- **Release**: `release.sh` builds, tags, and pushes the Docker image.
+- **Release**: bump the version in `pyproject.toml`, then `./deploy.sh -m "message"` — tags `vX.Y.Z`, pushes `:X.Y.Z` + `:latest`. Rollout is a tag bump in Selfhosting `compose/daily-greeting/compose.yml` (see `/homelab-deploy`).
 
 ## Testing
 

@@ -185,6 +185,33 @@ def _choose_greeting_length():
     return max(int(random.lognormvariate(mu, sigma)), cfg.min_length)
 
 
+def _truncate_run_ons(text, max_words):
+    """
+    Cut any sentence longer than max_words down to max_words.
+
+    Piper synthesizes one sentence per inference, and its memory grows
+    superlinearly with sentence length (~1GB at 100 words, ~5GB at 400). A
+    degenerate LLM response with no sentence punctuation got a 1,100-word
+    "sentence" OOM-killed at ~15GB. Normal greetings top out around 55 words.
+
+    Args:
+        text: Greeting text
+        max_words: Maximum words per sentence
+
+    Returns:
+        str: Text with run-on sentences truncated, whitespace between sentences preserved
+    """
+    # Split after terminal punctuation (optionally followed by a closing quote/paren),
+    # capturing the whitespace so paragraph breaks survive the rejoin.
+    parts = re.split(r'(?:(?<=[.!?])|(?<=[.!?]["”’)]))(\s+)', text)
+    for i in range(0, len(parts), 2):
+        words = parts[i].split()
+        if len(words) > max_words:
+            logging.warning(f"Truncated run-on sentence from {len(words)} to {max_words} words")
+            parts[i] = " ".join(words[:max_words]).rstrip(",;:-—") + "."
+    return "".join(parts)
+
+
 def generate_greeting(io_manager, weather, literature, album):
     """
     Run synthesis layer to compose final greeting from inputs.
@@ -232,6 +259,8 @@ def generate_greeting(io_manager, weather, literature, album):
     # Remove surrounding quotes if present
     if final_greeting.startswith('"') and final_greeting.endswith('"'):
         final_greeting = final_greeting[1:-1]
+
+    final_greeting = _truncate_run_ons(final_greeting, Config.instance().greeting.max_sentence_words)
 
     logging.debug(f"Generated {len(final_greeting.split())} words")
     logging.info("Synthesis layer complete")

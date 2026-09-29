@@ -41,6 +41,7 @@ class GreetingConfig:
     min_length: int = 50
     q1_length: int = 100
     mean_length: int = 140
+    max_sentence_words: int = 100
 
 
 @dataclass
